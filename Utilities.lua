@@ -184,7 +184,7 @@ local function GetItemArmorType(itemLink)
 
 	local classID, subClassID
 	if C_Item and C_Item.GetItemInfoInstant then
-		_, _, _, _, _, _, _, _, _, _, _, classID, subClassID = C_Item.GetItemInfoInstant(itemLink)
+		_, _, _, _, _, classID, subClassID = C_Item.GetItemInfoInstant(itemLink)
 	else
 		return nil
 	end

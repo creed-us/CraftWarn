@@ -83,6 +83,7 @@ end
 -- Cache: item warnings keyed on spellID + setting toggles, invalidated on spec change.
 local warningCache = {
     spellID = nil,
+    outputItemLink = nil,
     enableSpecStatWarning = nil,
     enableArmorTypeWarning = nil,
     enableSpecStatMatch = nil,
@@ -96,6 +97,7 @@ local warningCache = {
 
 function CW:InvalidateWarningCache()
     warningCache.spellID = nil
+    warningCache.outputItemLink = nil
     warningCache.enableSpecStatWarning = nil
     warningCache.enableSpecStatMatch = nil
     warningCache.enableNoPrimaryStatInfo = nil
@@ -131,7 +133,7 @@ function CW:GetCurrentOutputItemLink(form)
     return nil
 end
 
-function CW:BuildSpecMismatchWarning(form)
+function CW:BuildSpecMismatchWarning(form, itemLink)
     if not self.db.enableSpecStatWarning then
         return nil, nil
     end
@@ -141,7 +143,7 @@ function CW:BuildSpecMismatchWarning(form)
         return nil, nil
     end
 
-    local itemLink = self:GetCurrentOutputItemLink(form)
+	itemLink = itemLink or self:GetCurrentOutputItemLink(form)
     if not itemLink then
         return nil, nil
     end
@@ -183,7 +185,7 @@ function CW:BuildSpecMismatchWarning(form)
     return string.format("Stat Mismatch: Current spec uses %s, crafted item has %s.", expectedLabel, itemLabelText), nil
 end
 
-function CW:BuildArmorTypeWarning(form)
+function CW:BuildArmorTypeWarning(form, itemLink)
     if not self.db.enableArmorTypeWarning then
         return nil, nil
     end
@@ -193,7 +195,7 @@ function CW:BuildArmorTypeWarning(form)
         return nil, nil
     end
 
-    local itemLink = self:GetCurrentOutputItemLink(form)
+	itemLink = itemLink or self:GetCurrentOutputItemLink(form)
     if not itemLink then
         return nil, nil
     end
@@ -214,7 +216,7 @@ function CW:BuildArmorTypeWarning(form)
         return nil, nil
     end
 
-    return string.format("Armor Mismatch: Class bonus armor is %s, crafted item is %s.", expectedArmorType, itemArmorType), nil
+    return string.format("Armor Mismatch: Class armor is %s, crafted item is %s.", expectedArmorType, itemArmorType), nil
 end
 
 local function BuildInfoTextAndColor(statInfoText, armorInfoText)
@@ -248,6 +250,7 @@ function CW:RefreshFormWarnings(form)
     end
 
     local spellID = form.order and form.order.spellID
+    local itemLink = self:GetCurrentOutputItemLink(form)
     local warnEnabled = self.db.enableSpecStatWarning
     local matchEnabled = self.db.enableSpecStatMatch
     local noStatEnabled = self.db.enableNoPrimaryStatInfo
@@ -256,6 +259,7 @@ function CW:RefreshFormWarnings(form)
 
     -- Only recompute if the recipe or settings changed since last time
     if spellID ~= warningCache.spellID
+        or itemLink ~= warningCache.outputItemLink
         or warnEnabled ~= warningCache.enableSpecStatWarning
         or matchEnabled ~= warningCache.enableSpecStatMatch
         or noStatEnabled ~= warningCache.enableNoPrimaryStatInfo
@@ -263,14 +267,15 @@ function CW:RefreshFormWarnings(form)
         or armorMatchEnabled ~= warningCache.enableArmorTypeMatch
     then
         warningCache.spellID = spellID
+        warningCache.outputItemLink = itemLink
         warningCache.enableSpecStatWarning = warnEnabled
         warningCache.enableSpecStatMatch = matchEnabled
         warningCache.enableNoPrimaryStatInfo = noStatEnabled
         warningCache.enableArmorTypeWarning = armorWarnEnabled
         warningCache.enableArmorTypeMatch = armorMatchEnabled
 
-        local statMismatchText, statInfoText = self:BuildSpecMismatchWarning(form)
-        local armorMismatchText, armorInfoText = self:BuildArmorTypeWarning(form)
+        local statMismatchText, statInfoText = self:BuildSpecMismatchWarning(form, itemLink)
+        local armorMismatchText, armorInfoText = self:BuildArmorTypeWarning(form, itemLink)
 
         warningCache.mismatchText = statMismatchText
         warningCache.armorText = armorMismatchText
