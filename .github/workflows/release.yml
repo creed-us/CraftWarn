@@ -1,18 +1,23 @@
 name: Release
 
+# triggers when pushing a tag
 on:
-  push:
-    tags:
-      - '*'
+    workflow_dispatch:
+    push:
+        tags:
+            - "*"
+
+env:
+    CF_API_KEY: ${{ secrets.CF_API_KEY }}
+    GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    release: # "release" is a job, you can name it anything you want
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
-      - uses: BigWigsMods/packager@v2
-        env:
-          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+            - name: Package & Release
+              uses: BigWigsMods/packager@v2
