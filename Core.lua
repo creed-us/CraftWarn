@@ -16,6 +16,7 @@ CW.restoreRequestToken = 0
 CW.customerFrameHooked = false
 CW.recipeSelectedHooked = false
 CW.recipeSelectionOrigin = nil
+CW.isShuttingDown = false
 
 -- Refs from Utilities
 local IsContextFresh				= CW.IsContextFresh
@@ -41,6 +42,19 @@ end
 function CW:EnsureDatabase()
 	CraftWarnDB = CopyDefaults(CraftWarnDB, DEFAULTS)
 	self.db = CraftWarnDB
+end
+
+function CW:ClearCachedRecipeContext()
+	if self.db then
+		self.db.lastOrderContext = nil
+	end
+	if CraftWarnDB then
+		CraftWarnDB.lastOrderContext = nil
+	end
+	self.pendingRestoreContext = nil
+	self.pendingRestoreIsManual = false
+	self.restoreRequested = false
+	self.suppressAutoOpen = false
 end
 
 function CW:ClearRestoreRequest()
@@ -205,6 +219,10 @@ end
 ---------------------------------------------------------------------------
 
 function CW:CaptureCurrentOrderContext(form)
+	if self.isShuttingDown then
+		return
+	end
+
 	if not self:IsCaptureContext(form) then
 		return
 	end
@@ -628,6 +646,7 @@ end
 
 local function OnEvent(_, event, arg1)
 	if event == "PLAYER_LOGIN" then
+		CW.isShuttingDown = false
 		CW:Initialize()
 
 		if not CleanupAlreadyLoadedAddons() then
@@ -653,8 +672,13 @@ local function OnEvent(_, event, arg1)
 
 	elseif event == "PLAYER_UPDATE_RESTING" then
 		UpdateRestingState()
+
+	elseif event == "PLAYER_LOGOUT" then
+		CW.isShuttingDown = true
+		CW:ClearCachedRecipeContext()
 	end
 end
 
 eventFrame:RegisterEvent("PLAYER_LOGIN")
+eventFrame:RegisterEvent("PLAYER_LOGOUT")
 eventFrame:SetScript("OnEvent", OnEvent)
