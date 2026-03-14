@@ -85,12 +85,22 @@ function CW:ApplySavedAllocations(form, context)
 	if type(savedAllocations) ~= "table" or #savedAllocations == 0 then
 		form.cwRestoredFromContext = true
 		self:RefreshFormWarnings(form)
+		C_Timer.After(0.1, function()
+			if form and form:IsShown() then
+				self:RefreshFormWarnings(form)
+			end
+		end)
 		return
 	end
 
 	if not form.transaction.OverwriteAllocation then
 		form.cwRestoredFromContext = true
 		self:RefreshFormWarnings(form)
+		C_Timer.After(0.1, function()
+			if form and form:IsShown() then
+				self:RefreshFormWarnings(form)
+			end
+		end)
 		return
 	end
 
@@ -99,6 +109,11 @@ function CW:ApplySavedAllocations(form, context)
 	if type(slotSchematics) ~= "table" then
 		form.cwRestoredFromContext = true
 		self:RefreshFormWarnings(form)
+		C_Timer.After(0.1, function()
+			if form and form:IsShown() then
+				self:RefreshFormWarnings(form)
+			end
+		end)
 		return
 	end
 
@@ -129,6 +144,11 @@ function CW:ApplySavedAllocations(form, context)
 
 	form.cwRestoredFromContext = true
 	self:RefreshFormWarnings(form)
+	C_Timer.After(0.1, function()
+		if form and form:IsShown() then
+			self:RefreshFormWarnings(form)
+		end
+	end)
 end
 
 function CW:SuppressAutoOpen()
@@ -233,7 +253,7 @@ end
 function CW:StartFormTicker(form)
 	if not form then return end
 	self:StopFormTicker(form)
-	form.CraftWarnTicker = C_Timer.NewTicker(1.0, function()
+	form.CraftWarnTicker = C_Timer.NewTicker(0.25, function()
 		if not form:IsShown() then
 			self:StopFormTicker(form)
 			return
@@ -301,6 +321,11 @@ function CW:HookCustomerOrdersFrame()
 		else
 			form.cwRestoredFromContext = false
 			self:RefreshFormWarnings(form)
+			C_Timer.After(0.1, function()
+				if form and form:IsShown() then
+					self:RefreshFormWarnings(form)
+				end
+			end)
 		end
 	end)
 
