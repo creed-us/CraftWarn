@@ -2,15 +2,16 @@ CraftWarn = CraftWarn or {}
 local CW = CraftWarn
 
 CW.DEFAULTS = {
-	restoreLastRecipe = true,
-	autoOpenLastRecipe = true,
-	forgetOnBack = false,
-	forgetOnPlace = false,
-	enableSpecStatWarning = true,
-	enableSpecStatMatch = false,
-	enableNoPrimaryStatInfo = false,
-	restoreTTLSeconds = 24 * 60 * 60,
-	lastOrderContext = nil,
+	autoOpenLastRecipe		= true,
+	enableSpecStatWarning	= true,
+	enableArmorTypeWarning	= true,
+	enableSpecStatMatch		= false,
+	enableArmorTypeMatch	= false,
+	enableNoPrimaryStatInfo	= false,
+	forgetOnBack			= false,
+	forgetOnPlace			= false,
+	restoreTTLSeconds		= 24 * 60 * 60,
+	lastOrderContext		= nil,
 }
 
 CW.PRIMARY_STATS = {
