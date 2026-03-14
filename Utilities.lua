@@ -4,6 +4,7 @@ local CW = CraftWarn
 local DEFAULTS = CW.DEFAULTS
 local PRIMARY_STATS = CW.PRIMARY_STATS
 local TRACKED_STAT_KEYS = CW.TRACKED_STAT_KEYS
+local ARMOR_TYPE_BY_CLASS_TOKEN = CW.ARMOR_TYPE_BY_CLASS_TOKEN
 
 ---------------------------------------------------------------------------
 -- Helpers
@@ -212,6 +213,54 @@ local function DetectPrimaryStatsOnItem(itemLink)
 	return found
 end
 
+local ARMOR_SUBCLASS_TO_LABEL = {
+	[1] = "Cloth",
+	[2] = "Leather",
+	[3] = "Mail",
+	[4] = "Plate",
+}
+
+local function GetExpectedArmorTypeForPlayerClass()
+	local _, classToken = UnitClass("player")
+	if not classToken then
+		return nil
+	end
+
+	return ARMOR_TYPE_BY_CLASS_TOKEN[classToken]
+end
+
+local function GetItemArmorType(itemLink)
+	if not itemLink then
+		return nil
+	end
+
+	local classID, subClassID
+	if C_Item and C_Item.GetItemInfoInstant then
+		_, _, _, _, _, _, _, _, _, _, _, classID, subClassID = C_Item.GetItemInfoInstant(itemLink)
+	else
+		return nil
+	end
+
+	local armorClassID = Enum and Enum.ItemClass and Enum.ItemClass.Armor or 4
+	if classID ~= armorClassID then
+		return nil
+	end
+
+	if Enum and Enum.ItemArmorSubclass then
+		if subClassID == Enum.ItemArmorSubclass.Cloth then
+			return "Cloth"
+		elseif subClassID == Enum.ItemArmorSubclass.Leather then
+			return "Leather"
+		elseif subClassID == Enum.ItemArmorSubclass.Mail then
+			return "Mail"
+		elseif subClassID == Enum.ItemArmorSubclass.Plate then
+			return "Plate"
+		end
+	end
+
+	return ARMOR_SUBCLASS_TO_LABEL[subClassID]
+end
+
 ---------------------------------------------------------------------------
 -- Shared accessor
 ---------------------------------------------------------------------------
@@ -237,3 +286,5 @@ CW.BuildReagentFromSaved       = BuildReagentFromSaved
 CW.IsContextFresh              = IsContextFresh
 CW.CurrentSpecInfo             = CurrentSpecInfo
 CW.DetectPrimaryStatsOnItem    = DetectPrimaryStatsOnItem
+CW.GetExpectedArmorTypeForPlayerClass = GetExpectedArmorTypeForPlayerClass
+CW.GetItemArmorType            = GetItemArmorType
