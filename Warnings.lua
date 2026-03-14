@@ -145,7 +145,7 @@ function CW:BuildSpecMismatchWarning(form)
         return nil, nil
     end
 
-    if not IsEquippableItem(itemLink) then
+    if not C_Item.IsEquippableItem(itemLink) then
         return nil, nil
     end
 
