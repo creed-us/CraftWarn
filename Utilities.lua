@@ -194,18 +194,6 @@ local function GetItemArmorType(itemLink)
 		return nil
 	end
 
-	if Enum and Enum.ItemArmorSubclass then
-		if subClassID == Enum.ItemArmorSubclass.Cloth then
-			return "Cloth"
-		elseif subClassID == Enum.ItemArmorSubclass.Leather then
-			return "Leather"
-		elseif subClassID == Enum.ItemArmorSubclass.Mail then
-			return "Mail"
-		elseif subClassID == Enum.ItemArmorSubclass.Plate then
-			return "Plate"
-		end
-	end
-
 	return ARMOR_SUBCLASS_TO_LABEL[subClassID]
 end
 

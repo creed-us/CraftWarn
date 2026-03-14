@@ -378,22 +378,16 @@ function CW:RefreshFormWarnings(form)
         return
     end
 
-    if self.IsOperationalContext and not self:IsOperationalContext(form) then
+    if not self:IsOperationalContext(form) then
         self:RenderWarnings(form, nil)
         return
     end
 
     local spellID = form.order and form.order.spellID
-    local forceRecompute = form.cwWarningDirty and true or false
-    local warnEnabled = self.db.enableSpecStatWarning
-    local matchEnabled = self.db.enableSpecStatMatch
-    local noStatEnabled = self.db.enableNoPrimaryStatInfo
-    local armorWarnEnabled = self.db.enableArmorTypeWarning
-    local armorMatchEnabled = self.db.enableArmorTypeMatch
-
     local now = GetTime and GetTime() or time()
 
-    if not forceRecompute
+    -- Fast path: spellID and all settings unchanged, no dirty flag — render from cache.
+    if not form.cwWarningDirty
         and spellID == warningCache.spellID
         and AreSettingKeysUnchanged(self)
     then
@@ -405,36 +399,24 @@ function CW:RefreshFormWarnings(form)
         return
     end
 
+    -- Full recompute: recipe, reagents, or settings changed.
     local itemLink, reagentSignature = self:GetCurrentOutputContext(form)
 
-    -- Only recompute if the recipe or settings changed since last time
-    if forceRecompute
-        or spellID ~= warningCache.spellID
-        or itemLink ~= warningCache.outputItemLink
-        or reagentSignature ~= warningCache.reagentSignature
-        or warnEnabled ~= warningCache.enableSpecStatWarning
-        or matchEnabled ~= warningCache.enableSpecStatMatch
-        or noStatEnabled ~= warningCache.enableNoPrimaryStatInfo
-        or armorWarnEnabled ~= warningCache.enableArmorTypeWarning
-        or armorMatchEnabled ~= warningCache.enableArmorTypeMatch
-    then
-        warningCache.spellID = spellID
-        warningCache.outputItemLink = itemLink
-        warningCache.reagentSignature = reagentSignature
-        warningCache.enableSpecStatWarning = warnEnabled
-        warningCache.enableSpecStatMatch = matchEnabled
-        warningCache.enableNoPrimaryStatInfo = noStatEnabled
-        warningCache.enableArmorTypeWarning = armorWarnEnabled
-        warningCache.enableArmorTypeMatch = armorMatchEnabled
+    warningCache.spellID = spellID
+    warningCache.outputItemLink = itemLink
+    warningCache.reagentSignature = reagentSignature
+    warningCache.enableSpecStatWarning = self.db.enableSpecStatWarning
+    warningCache.enableSpecStatMatch = self.db.enableSpecStatMatch
+    warningCache.enableNoPrimaryStatInfo = self.db.enableNoPrimaryStatInfo
+    warningCache.enableArmorTypeWarning = self.db.enableArmorTypeWarning
+    warningCache.enableArmorTypeMatch = self.db.enableArmorTypeMatch
 
-        local itemAnalysis = GetItemAnalysis(itemLink)
+    local itemAnalysis = GetItemAnalysis(itemLink)
+    local statMismatchText, statInfoText = self:BuildSpecMismatchWarning(form, itemLink, itemAnalysis)
+    local armorMismatchText, armorInfoText = self:BuildArmorTypeWarning(form, itemLink, itemAnalysis)
 
-        local statMismatchText, statInfoText = self:BuildSpecMismatchWarning(form, itemLink, itemAnalysis)
-        local armorMismatchText, armorInfoText = self:BuildArmorTypeWarning(form, itemLink, itemAnalysis)
-
-        warningCache.statText = statMismatchText or statInfoText
-        warningCache.armorText = armorMismatchText or armorInfoText
-    end
+    warningCache.statText = statMismatchText or statInfoText
+    warningCache.armorText = armorMismatchText or armorInfoText
 
     self:RenderWarnings(form, {
         statText = warningCache.statText,
