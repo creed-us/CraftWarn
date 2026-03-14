@@ -17,7 +17,7 @@ function CW:BuildWarningFrames(form)
     local holder = CreateFrame("Frame", nil, parent)
     holder:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, -10)
     holder:SetWidth(350)
-    holder:SetHeight(48)
+    holder:SetHeight(36)
 
     local mismatch = holder:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     mismatch:SetPoint("TOPLEFT", holder, "TOPLEFT", 0, 0)
@@ -25,28 +25,21 @@ function CW:BuildWarningFrames(form)
     mismatch:SetJustifyH("RIGHT")
     mismatch:SetTextColor(1.0, 0.23, 0.19)
 
-    local reagent = holder:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     local armor = holder:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     armor:SetPoint("TOPLEFT", mismatch, "BOTTOMLEFT", 0, -2)
     armor:SetPoint("TOPRIGHT", mismatch, "BOTTOMRIGHT", 0, -2)
     armor:SetJustifyH("RIGHT")
     armor:SetTextColor(1.0, 0.23, 0.19)
 
-    reagent:SetPoint("TOPLEFT", armor, "BOTTOMLEFT", 0, -2)
-    reagent:SetPoint("TOPRIGHT", armor, "BOTTOMRIGHT", 0, -2)
-    reagent:SetJustifyH("RIGHT")
-    reagent:SetTextColor(1.0, 0.82, 0.0)
-
     local info = holder:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    info:SetPoint("TOPLEFT", reagent, "BOTTOMLEFT", 0, -2)
-    info:SetPoint("TOPRIGHT", reagent, "BOTTOMRIGHT", 0, -2)
+    info:SetPoint("TOPLEFT", armor, "BOTTOMLEFT", 0, -2)
+    info:SetPoint("TOPRIGHT", armor, "BOTTOMRIGHT", 0, -2)
     info:SetJustifyH("RIGHT")
 
     form.CraftWarnWarnings = {
         holder = holder,
         mismatch = mismatch,
         armor = armor,
-        reagent = reagent,
         info = info,
     }
 end
@@ -61,7 +54,6 @@ function CW:RenderWarnings(form, payload)
 
     local mismatchText = payload and payload.mismatchText or nil
     local armorText    = payload and payload.armorText or nil
-    local reagentText  = payload and payload.reagentText or nil
     local infoText     = payload and payload.infoText or nil
     local infoIsPositive = payload and payload.infoIsPositive or false
 
@@ -70,9 +62,6 @@ function CW:RenderWarnings(form, payload)
 
     warnings.armor:SetText(armorText or "")
     warnings.armor:SetShown(armorText and armorText ~= "")
-
-    warnings.reagent:SetText(reagentText or "")
-    warnings.reagent:SetShown(reagentText and reagentText ~= "")
 
     warnings.info:SetText(infoText or "")
     warnings.info:SetShown(infoText and infoText ~= "")
@@ -83,7 +72,7 @@ function CW:RenderWarnings(form, payload)
         warnings.info:SetTextColor(0.5, 0.5, 0.5)
     end
 
-    local visible = warnings.mismatch:IsShown() or warnings.armor:IsShown() or warnings.reagent:IsShown() or warnings.info:IsShown()
+    local visible = warnings.mismatch:IsShown() or warnings.armor:IsShown() or warnings.info:IsShown()
     warnings.holder:SetShown(visible)
 end
 
@@ -91,8 +80,7 @@ end
 -- Warning data builders
 ---------------------------------------------------------------------------
 
--- Cache: spec mismatch keyed on spellID + setting toggles, invalidated on spec change.
--- Reagent shortage uses a dirty flag, recomputed only on bag/allocation changes.
+-- Cache: item warnings keyed on spellID + setting toggles, invalidated on spec change.
 local warningCache = {
     spellID = nil,
     enableSpecStatWarning = nil,
@@ -104,8 +92,6 @@ local warningCache = {
     armorText = nil,
     infoText = nil,
     infoIsPositive = false,
-    reagentText = nil,
-    reagentDirty = true,
 }
 
 function CW:InvalidateWarningCache()
@@ -115,12 +101,10 @@ function CW:InvalidateWarningCache()
     warningCache.enableNoPrimaryStatInfo = nil
     warningCache.enableArmorTypeWarning = nil
     warningCache.enableArmorTypeMatch = nil
+    warningCache.mismatchText = nil
+    warningCache.armorText = nil
+    warningCache.infoText = nil
     warningCache.infoIsPositive = false
-    warningCache.reagentDirty = true
-end
-
-function CW:MarkReagentsDirty()
-    warningCache.reagentDirty = true
 end
 
 function CW:GetCurrentOutputItemLink(form)
@@ -258,40 +242,6 @@ local function BuildInfoTextAndColor(statInfoText, armorInfoText)
     return table.concat(messages, "  "), allPositive
 end
 
-function CW:BuildReagentShortageWarning(form)
-    if not form or not form.transaction or not form.cwRestoredFromContext then
-        return nil
-    end
-
-    if not form.transaction.CreateCraftingReagentInfoTbl then
-        return nil
-    end
-
-    local infos = form.transaction:CreateCraftingReagentInfoTbl()
-    if type(infos) ~= "table" or #infos == 0 then
-        return nil
-    end
-
-    local deficits = {}
-    for _, info in ipairs(infos) do
-        local reagent = info.reagent
-        if reagent and info.quantity and info.quantity > 0 then
-            local possessed = CW.GetReagentPossessionQuantity(reagent)
-            if possessed < info.quantity then
-                local missing = info.quantity - possessed
-                local name = reagent.itemID and CW.SafeItemName(reagent.itemID) or CW.SafeCurrencyName(reagent.currencyID)
-                table.insert(deficits, string.format("%dx %s", missing, name))
-            end
-        end
-    end
-
-    if #deficits == 0 then
-        return nil
-    end
-
-    return string.format("Saved reagents changed: missing %s", table.concat(deficits, ", "))
-end
-
 function CW:RefreshFormWarnings(form)
     if not form or not form:IsShown() then
         return
@@ -325,19 +275,11 @@ function CW:RefreshFormWarnings(form)
         warningCache.mismatchText = statMismatchText
         warningCache.armorText = armorMismatchText
         warningCache.infoText, warningCache.infoIsPositive = BuildInfoTextAndColor(statInfoText, armorInfoText)
-        warningCache.reagentDirty = true -- new recipe, so recheck reagents too
-    end
-
-    -- Only recheck reagents when bags changed or recipe switched
-    if warningCache.reagentDirty then
-        warningCache.reagentDirty = false
-        warningCache.reagentText = self:BuildReagentShortageWarning(form)
     end
 
     self:RenderWarnings(form, {
         mismatchText = warningCache.mismatchText,
         armorText = warningCache.armorText,
-        reagentText = warningCache.reagentText,
         infoText = warningCache.infoText,
         infoIsPositive = warningCache.infoIsPositive,
     })

@@ -30,35 +30,6 @@ local function CopyDefaults(db, defaults)
 	return db
 end
 
-local function SafeItemName(itemID)
-	if not itemID then
-		return "Unknown item"
-	end
-
-	local itemName = C_Item and C_Item.GetItemNameByID and C_Item.GetItemNameByID(itemID)
-	if itemName then
-		return itemName
-	end
-
-	---@diagnostic disable: deprecated
-	itemName = C_Item.GetItemInfo(itemID) or GetItemInfo(itemID)
-	---@diagnostic enable: deprecated
-	if itemName then
-		return itemName
-	end
-
-	return string.format("item:%d", itemID)
-end
-
-local function SafeCurrencyName(currencyID)
-	if not currencyID or not C_CurrencyInfo then
-		return "Unknown currency"
-	end
-
-	local info = C_CurrencyInfo.GetCurrencyInfo(currencyID)
-	return (info and info.name) or string.format("currency:%d", currencyID)
-end
-
 local function BuildReagentIdentity(reagent)
 	if not reagent then
 		return nil
@@ -73,29 +44,6 @@ local function BuildReagentIdentity(reagent)
 	end
 
 	return nil
-end
-
-local function GetReagentPossessionQuantity(reagent)
-	if not reagent then
-		return 0
-	end
-
-	if ProfessionsUtil and ProfessionsUtil.GetReagentQuantityInPossession then
-		return ProfessionsUtil.GetReagentQuantityInPossession(reagent, false) or 0
-	end
-
-	if reagent.itemID then
-		---@diagnostic disable: deprecated
-		return C_Item and C_Item.GetItemCount and C_Item.GetItemCount(reagent.itemID, false) or GetItemCount(reagent.itemID, false)
-		---@diagnostic enable: deprecated
-	end
-
-	if reagent.currencyID and C_CurrencyInfo then
-		local info = C_CurrencyInfo.GetCurrencyInfo(reagent.currencyID)
-		return (info and info.quantity) or 0
-	end
-
-	return 0
 end
 
 local function NormalizeCraftingReagentInfo(info)
@@ -278,9 +226,6 @@ end
 ---------------------------------------------------------------------------
 
 CW.CopyDefaults              = CopyDefaults
-CW.SafeItemName               = SafeItemName
-CW.SafeCurrencyName            = SafeCurrencyName
-CW.GetReagentPossessionQuantity = GetReagentPossessionQuantity
 CW.NormalizeCraftingReagentInfos = NormalizeCraftingReagentInfos
 CW.BuildReagentFromSaved       = BuildReagentFromSaved
 CW.IsContextFresh              = IsContextFresh

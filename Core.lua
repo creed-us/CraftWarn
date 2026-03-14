@@ -356,14 +356,12 @@ local activeEventsRegistered = false
 local function RegisterActiveEvents()
 	if activeEventsRegistered then return end
 	activeEventsRegistered = true
-	eventFrame:RegisterEvent("BAG_UPDATE_DELAYED")
 	eventFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
 end
 
 local function UnregisterActiveEvents()
 	if not activeEventsRegistered then return end
 	activeEventsRegistered = false
-	eventFrame:UnregisterEvent("BAG_UPDATE_DELAYED")
 	eventFrame:UnregisterEvent("PLAYER_SPECIALIZATION_CHANGED")
 
 	-- Kill the ticker, no point in running it outside of rest areas
@@ -418,13 +416,6 @@ local function OnEvent(_, event, arg1)
 		if pendingAddons[arg1] then
 			CW:TryHookProfessionUI()
 			TryUnregisterAddonLoaded(arg1)
-		end
-
-	elseif event == "BAG_UPDATE_DELAYED" then
-		CW:MarkReagentsDirty()
-		local form = CW:GetVisibleOrderForm()
-		if form then
-			CW:RefreshFormWarnings(form)
 		end
 
 	elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
