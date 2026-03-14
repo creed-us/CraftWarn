@@ -17,7 +17,7 @@ function CW:BuildWarningFrames(form)
     local holder = CreateFrame("Frame", nil, parent)
     holder:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, -10)
     holder:SetWidth(350)
-    holder:SetHeight(36)
+    holder:SetHeight(24)
 
     local mismatch = holder:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     mismatch:SetPoint("TOPLEFT", holder, "TOPLEFT", 0, 0)
@@ -31,17 +31,28 @@ function CW:BuildWarningFrames(form)
     armor:SetJustifyH("RIGHT")
     armor:SetTextColor(1.0, 0.23, 0.19)
 
-    local info = holder:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    info:SetPoint("TOPLEFT", armor, "BOTTOMLEFT", 0, -2)
-    info:SetPoint("TOPRIGHT", armor, "BOTTOMRIGHT", 0, -2)
-    info:SetJustifyH("RIGHT")
-
     form.CraftWarnWarnings = {
         holder = holder,
         mismatch = mismatch,
         armor = armor,
-        info = info,
     }
+end
+
+local function SetLineState(line, text, matchPrefix, mismatchPrefix)
+    line:SetText(text or "")
+    line:SetShown(text and text ~= "")
+
+    if not (text and text ~= "") then
+        return
+    end
+
+    if matchPrefix and text:find("^" .. matchPrefix) then
+        line:SetTextColor(0.26, 0.84, 0.26)
+    elseif mismatchPrefix and text:find("^" .. mismatchPrefix) then
+        line:SetTextColor(1.0, 0.23, 0.19)
+    else
+        line:SetTextColor(0.5, 0.5, 0.5)
+    end
 end
 
 function CW:RenderWarnings(form, payload)
@@ -52,27 +63,13 @@ function CW:RenderWarnings(form, payload)
         return
     end
 
-    local mismatchText = payload and payload.mismatchText or nil
-    local armorText    = payload and payload.armorText or nil
-    local infoText     = payload and payload.infoText or nil
-    local infoIsPositive = payload and payload.infoIsPositive or false
+    local statText = payload and payload.statText or nil
+    local armorText = payload and payload.armorText or nil
 
-    warnings.mismatch:SetText(mismatchText or "")
-    warnings.mismatch:SetShown(mismatchText and mismatchText ~= "")
+    SetLineState(warnings.mismatch, statText, "Stat Match", "Stat Mismatch")
+    SetLineState(warnings.armor, armorText, "Armor Match", "Armor Mismatch")
 
-    warnings.armor:SetText(armorText or "")
-    warnings.armor:SetShown(armorText and armorText ~= "")
-
-    warnings.info:SetText(infoText or "")
-    warnings.info:SetShown(infoText and infoText ~= "")
-
-    if infoIsPositive then
-        warnings.info:SetTextColor(0.26, 0.84, 0.26)
-    else
-        warnings.info:SetTextColor(0.5, 0.5, 0.5)
-    end
-
-    local visible = warnings.mismatch:IsShown() or warnings.armor:IsShown() or warnings.info:IsShown()
+    local visible = warnings.mismatch:IsShown() or warnings.armor:IsShown()
     warnings.holder:SetShown(visible)
 end
 
@@ -89,10 +86,8 @@ local warningCache = {
     enableSpecStatMatch = nil,
     enableArmorTypeMatch = nil,
     enableNoPrimaryStatInfo = nil,
-    mismatchText = nil,
+    statText = nil,
     armorText = nil,
-    infoText = nil,
-    infoIsPositive = false,
 }
 
 function CW:InvalidateWarningCache()
@@ -103,10 +98,8 @@ function CW:InvalidateWarningCache()
     warningCache.enableNoPrimaryStatInfo = nil
     warningCache.enableArmorTypeWarning = nil
     warningCache.enableArmorTypeMatch = nil
-    warningCache.mismatchText = nil
+    warningCache.statText = nil
     warningCache.armorText = nil
-    warningCache.infoText = nil
-    warningCache.infoIsPositive = false
 end
 
 function CW:GetCurrentOutputItemLink(form)
@@ -219,31 +212,6 @@ function CW:BuildArmorTypeWarning(form, itemLink)
     return string.format("Armor Mismatch: Class armor is %s, crafted item is %s.", expectedArmorType, itemArmorType), nil
 end
 
-local function BuildInfoTextAndColor(statInfoText, armorInfoText)
-    local messages = {}
-    local allPositive = true
-
-    if statInfoText and statInfoText ~= "" then
-        table.insert(messages, statInfoText)
-        if not statInfoText:find("^Stat Match") then
-            allPositive = false
-        end
-    end
-
-    if armorInfoText and armorInfoText ~= "" then
-        table.insert(messages, armorInfoText)
-        if not armorInfoText:find("^Armor Match") then
-            allPositive = false
-        end
-    end
-
-    if #messages == 0 then
-        return nil, false
-    end
-
-    return table.concat(messages, "  "), allPositive
-end
-
 function CW:RefreshFormWarnings(form)
     if not form or not form:IsShown() then
         return
@@ -277,15 +245,12 @@ function CW:RefreshFormWarnings(form)
         local statMismatchText, statInfoText = self:BuildSpecMismatchWarning(form, itemLink)
         local armorMismatchText, armorInfoText = self:BuildArmorTypeWarning(form, itemLink)
 
-        warningCache.mismatchText = statMismatchText
-        warningCache.armorText = armorMismatchText
-        warningCache.infoText, warningCache.infoIsPositive = BuildInfoTextAndColor(statInfoText, armorInfoText)
+        warningCache.statText = statMismatchText or statInfoText
+        warningCache.armorText = armorMismatchText or armorInfoText
     end
 
     self:RenderWarnings(form, {
-        mismatchText = warningCache.mismatchText,
+        statText = warningCache.statText,
         armorText = warningCache.armorText,
-        infoText = warningCache.infoText,
-        infoIsPositive = warningCache.infoIsPositive,
     })
 end
