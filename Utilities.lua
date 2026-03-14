@@ -39,7 +39,9 @@ local function SafeItemName(itemID)
 		return itemName
 	end
 
-	itemName = C_Item.GetItemInfo(itemID)
+	---@diagnostic disable: deprecated
+	itemName = C_Item.GetItemInfo(itemID) or GetItemInfo(itemID)
+	---@diagnostic enable: deprecated
 	if itemName then
 		return itemName
 	end
