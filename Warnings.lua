@@ -6,6 +6,12 @@ local STAT_KEY_TO_LABEL = CW.STAT_KEY_TO_LABEL
 local ITEM_ANALYSIS_CACHE_SIZE = CW.ITEM_ANALYSIS_CACHE_SIZE
 local UI_CONFIG = CW.UI_CONFIG
 local WARNING_COLORS = UI_CONFIG.warningColors
+local WARNING_ICONS = UI_CONFIG.warningIcons
+local WARNING_ICON_SIZE = UI_CONFIG.warningIconSize
+local WARNING_ICON_TEXT_GAP = UI_CONFIG.warningIconTextGap
+local WARNING_ICON_OFFSET_Y = UI_CONFIG.warningIconOffsetY
+local WARNING_ICON_LINE_SPACING = UI_CONFIG.warningIconLineSpacing
+local WARNING_INFO_ICON_TINT = UI_CONFIG.warningInfoIconTint
 local TEXT = CW.TEXT
 local WARNING_TEXT = TEXT.warnings
 
@@ -26,42 +32,77 @@ function CW:BuildWarningFrames(form)
 
     local mismatch = holder:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     mismatch:SetPoint("TOPLEFT", holder, "TOPLEFT", 0, 0)
-    mismatch:SetPoint("TOPRIGHT", holder, "TOPRIGHT", 0, 0)
     mismatch:SetJustifyH("RIGHT")
     local mismatchColor = WARNING_COLORS.mismatch
     mismatch:SetTextColor(mismatchColor[1], mismatchColor[2], mismatchColor[3])
 
+    local mismatchIcon = holder:CreateTexture(nil, "OVERLAY")
+    mismatchIcon:SetSize(WARNING_ICON_SIZE, WARNING_ICON_SIZE)
+    mismatchIcon:SetPoint("TOPRIGHT", holder, "TOPRIGHT", 0, WARNING_ICON_OFFSET_Y)
+    mismatch:SetPoint("TOPRIGHT", mismatchIcon, "TOPLEFT", -WARNING_ICON_TEXT_GAP, 0)
+
     local armor = holder:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     local warningLineSpacing = UI_CONFIG.warningLineSpacing
     armor:SetPoint("TOPLEFT", mismatch, "BOTTOMLEFT", 0, warningLineSpacing)
-    armor:SetPoint("TOPRIGHT", mismatch, "BOTTOMRIGHT", 0, warningLineSpacing)
     armor:SetJustifyH("RIGHT")
     armor:SetTextColor(mismatchColor[1], mismatchColor[2], mismatchColor[3])
+
+    local armorIcon = holder:CreateTexture(nil, "OVERLAY")
+    armorIcon:SetSize(WARNING_ICON_SIZE, WARNING_ICON_SIZE)
+    armorIcon:SetPoint("TOPRIGHT", mismatchIcon, "BOTTOMRIGHT", 0, WARNING_ICON_LINE_SPACING)
+    armor:SetPoint("TOPRIGHT", armorIcon, "TOPLEFT", -WARNING_ICON_TEXT_GAP, 0)
 
     form.CraftWarnWarnings = {
         holder = holder,
         mismatch = mismatch,
+        mismatchIcon = mismatchIcon,
         armor = armor,
+        armorIcon = armorIcon,
     }
 end
 
 local function SetLineState(line, text, matchPrefix, mismatchPrefix)
-    line:SetText(text)
+    line:SetText(text or "")
     line:SetShown(text and text ~= "")
 
     if not (text and text ~= "") then
-        return
+        return "none"
     end
 
     if matchPrefix and text:find("^" .. matchPrefix) then
         local matchColor = WARNING_COLORS.match
         line:SetTextColor(matchColor[1], matchColor[2], matchColor[3])
+        return "match"
     elseif mismatchPrefix and text:find("^" .. mismatchPrefix) then
         local mismatchColor = WARNING_COLORS.mismatch
         line:SetTextColor(mismatchColor[1], mismatchColor[2], mismatchColor[3])
+        return "warning"
     else
         local infoColor = WARNING_COLORS.info
         line:SetTextColor(infoColor[1], infoColor[2], infoColor[3])
+        return "info"
+    end
+end
+
+local function SetLineIcon(icon, state)
+    if not icon then
+        return
+    end
+
+    if state == "match" then
+        icon:SetTexture(WARNING_ICONS.match)
+        icon:SetVertexColor(1, 1, 1)
+        icon:Show()
+    elseif state == "warning" then
+        icon:SetTexture(WARNING_ICONS.warning)
+        icon:SetVertexColor(1, 1, 1)
+        icon:Show()
+    elseif state == "info" then
+        icon:SetTexture(WARNING_ICONS.info)
+        icon:SetVertexColor(WARNING_INFO_ICON_TINT[1], WARNING_INFO_ICON_TINT[2], WARNING_INFO_ICON_TINT[3])
+        icon:Show()
+    else
+        icon:Hide()
     end
 end
 
@@ -75,19 +116,36 @@ function CW:RenderWarnings(form, payload)
 
     local statText = payload and payload.statText
     local armorText = payload and payload.armorText
+    local warningLineSpacing = UI_CONFIG.warningLineSpacing
 
-    SetLineState(
+    local statState = SetLineState(
         warnings.mismatch,
         statText,
         WARNING_TEXT.prefixStatMatch,
         WARNING_TEXT.prefixStatMismatch
     )
-    SetLineState(
+    local armorState = SetLineState(
         warnings.armor,
         armorText,
         WARNING_TEXT.prefixArmorMatch,
         WARNING_TEXT.prefixArmorMismatch
     )
+
+    SetLineIcon(warnings.mismatchIcon, statState)
+    SetLineIcon(warnings.armorIcon, armorState)
+
+    warnings.armor:ClearAllPoints()
+    warnings.armorIcon:ClearAllPoints()
+
+    if warnings.mismatch:IsShown() then
+        warnings.armor:SetPoint("TOPLEFT", warnings.mismatch, "BOTTOMLEFT", 0, warningLineSpacing)
+        warnings.armorIcon:SetPoint("TOPRIGHT", warnings.mismatchIcon, "BOTTOMRIGHT", 0, WARNING_ICON_LINE_SPACING)
+    else
+        warnings.armor:SetPoint("TOPLEFT", warnings.holder, "TOPLEFT", 0, 0)
+        warnings.armorIcon:SetPoint("TOPRIGHT", warnings.holder, "TOPRIGHT", 0, WARNING_ICON_OFFSET_Y)
+    end
+
+    warnings.armor:SetPoint("TOPRIGHT", warnings.armorIcon, "TOPLEFT", -WARNING_ICON_TEXT_GAP, 0)
 
     local visible = warnings.mismatch:IsShown() or warnings.armor:IsShown()
     warnings.holder:SetShown(visible)
