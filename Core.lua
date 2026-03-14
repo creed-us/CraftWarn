@@ -13,12 +13,12 @@ CW.suppressAutoOpen = false
 CW.restoreRequested = false
 CW.customerFrameHooked = false
 
--- Grab refs from Utilities.lua (loaded before us)
-local IsContextFresh              = CW.IsContextFresh
-local NormalizeCraftingReagentInfos = CW.NormalizeCraftingReagentInfos
-local BuildReagentFromSaved       = CW.BuildReagentFromSaved
-local CopyDefaults                = CW.CopyDefaults
-local DEFAULTS                    = CW.DEFAULTS
+-- Refs from Utilities
+local IsContextFresh				= CW.IsContextFresh
+local NormalizeCraftingReagentInfos	= CW.NormalizeCraftingReagentInfos
+local BuildReagentFromSaved			= CW.BuildReagentFromSaved
+local CopyDefaults					= CW.CopyDefaults
+local DEFAULTS						= CW.DEFAULTS
 
 ---------------------------------------------------------------------------
 -- Core helpers
