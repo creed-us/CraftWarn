@@ -35,10 +35,6 @@ local TEXT							= CW.TEXT
 -- Core helpers
 ---------------------------------------------------------------------------
 
-local function NowSeconds()
-	return (GetTime and GetTime()) or time()
-end
-
 function CW:Print(msg)
 	local prefix = TEXT.addonPrefix
 	if DEFAULT_CHAT_FRAME then
