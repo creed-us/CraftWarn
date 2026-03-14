@@ -25,14 +25,14 @@ Open **Interface → AddOns → CraftWarn** to configure. All options can also b
 | Restore last recipe and reagents | On | Re-opens your last recipe when the Customer Orders window opens |
 | Warn on spec primary-stat mismatch | On | Red warning when the crafted item's stat doesn't match your spec |
 | Show confirmation when stat matches spec | Off | Green confirmation when the stat does match |
-| Show info when crafted item has no primary stat | Off | Grey note for stat-less items like rings and necks |
+| Show when crafted item has no primary stat | Off | Grey note for items like rings and necks that lack primary stat |
 | Auto-open last recipe when browsing orders | On | Automatically triggers recipe recall on window open |
-| Don't auto-open after clicking Back | Off | Clears the saved recipe when you click Back on the order form |
-| Don't auto-open after placing an order | Off | Clears the saved recipe after you place an order |
+| Don't auto-open after clicking back | Off | Returns to the last recipe when you click back on the order form |
+| Don't auto-open after placing an order | Off | Returns to the last recipe after you place an order |
 
 ---
 
-## Slash Commands
+## Commands
 
 `/craftwarn` or `/cw`
 
