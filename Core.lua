@@ -12,7 +12,9 @@ CW.pendingRestoreContext = nil
 CW.suppressAutoOpen = false
 CW.restoreRequested = false
 CW.customerFrameHooked = false
-CW.fallbackTickerSeconds = 0.75
+CW.fallbackTickerSeconds = CW.RUNTIME_CONFIG and CW.RUNTIME_CONFIG.fallbackTickerSeconds
+CW.fallbackStaleRefreshSeconds = CW.RUNTIME_CONFIG and CW.RUNTIME_CONFIG.fallbackStaleRefreshSeconds
+CW.fallbackContextCaptureSeconds = CW.RUNTIME_CONFIG and CW.RUNTIME_CONFIG.fallbackContextCaptureSeconds
 
 -- Refs from Utilities
 local IsContextFresh				= CW.IsContextFresh
@@ -20,13 +22,16 @@ local NormalizeCraftingReagentInfos	= CW.NormalizeCraftingReagentInfos
 local BuildReagentFromSaved			= CW.BuildReagentFromSaved
 local CopyDefaults					= CW.CopyDefaults
 local DEFAULTS						= CW.DEFAULTS
+local RUNTIME_CONFIG				= CW.RUNTIME_CONFIG
+local UI_CONFIG						= CW.UI_CONFIG
+local TEXT							= CW.TEXT
 
 ---------------------------------------------------------------------------
 -- Core helpers
 ---------------------------------------------------------------------------
 
 function CW:Print(msg)
-	local prefix = "|cfc7f03ffCraftWarn|r"
+	local prefix = TEXT.addonPrefix
 	if DEFAULT_CHAT_FRAME then
 		DEFAULT_CHAT_FRAME:AddMessage(string.format("%s: %s", prefix, tostring(msg)))
 	end
@@ -60,12 +65,62 @@ function CW:IsOperationalContext(form)
 	return order.orderID == nil
 end
 
+-- Capture can run during teardown even when the form is no longer visible.
+function CW:IsCaptureContext(form)
+	if not IsResting() then
+		return false
+	end
+
+	if not form or not form.order then
+		return false
+	end
+
+	return form.order.orderID == nil
+end
+
+function CW:MarkWarningStateDirty(form)
+	if not form then
+		return
+	end
+
+	form.cwWarningDirty = true
+end
+
+function CW:ShouldRunFallbackRefresh(form)
+	if not form then
+		return false
+	end
+
+	if form.cwWarningDirty then
+		return true
+	end
+
+	local now = GetTime and GetTime() or time()
+	local lastRefresh = form.cwLastWarningRefreshTime or 0
+	return (now - lastRefresh) >= self.fallbackStaleRefreshSeconds
+end
+
+function CW:ShouldCaptureContext(form)
+	if not form then
+		return false
+	end
+
+	if form.cwWarningDirty then
+		return true
+	end
+
+	local now = GetTime and GetTime() or time()
+	local lastCapture = form.cwLastContextCaptureTime or 0
+	return (now - lastCapture) >= self.fallbackContextCaptureSeconds
+end
+
 function CW:QueueWarningRefresh(form, delaySeconds)
 	if not form then
 		return
 	end
 
 	if not self:IsOperationalContext(form) then
+		form.cwWarningDirty = false
 		self:RenderWarnings(form, nil)
 		return
 	end
@@ -95,7 +150,7 @@ end
 ---------------------------------------------------------------------------
 
 function CW:CaptureCurrentOrderContext(form)
-	if not self:IsOperationalContext(form) then
+	if not self:IsCaptureContext(form) then
 		return
 	end
 
@@ -142,15 +197,17 @@ function CW:ApplySavedAllocations(form, context)
 	local savedAllocations = context.allocations
 	if type(savedAllocations) ~= "table" or #savedAllocations == 0 then
 		form.cwRestoredFromContext = true
+		self:MarkWarningStateDirty(form)
 		self:QueueWarningRefresh(form, 0)
-		self:QueueWarningRefresh(form, 0.1)
+		self:QueueWarningRefresh(form, RUNTIME_CONFIG.delayedWarningRefreshSeconds)
 		return
 	end
 
 	if not form.transaction.OverwriteAllocation then
 		form.cwRestoredFromContext = true
+		self:MarkWarningStateDirty(form)
 		self:QueueWarningRefresh(form, 0)
-		self:QueueWarningRefresh(form, 0.1)
+		self:QueueWarningRefresh(form, RUNTIME_CONFIG.delayedWarningRefreshSeconds)
 		return
 	end
 
@@ -158,8 +215,9 @@ function CW:ApplySavedAllocations(form, context)
 	local slotSchematics = recipeSchematic and recipeSchematic.reagentSlotSchematics
 	if type(slotSchematics) ~= "table" then
 		form.cwRestoredFromContext = true
+		self:MarkWarningStateDirty(form)
 		self:QueueWarningRefresh(form, 0)
-		self:QueueWarningRefresh(form, 0.1)
+		self:QueueWarningRefresh(form, RUNTIME_CONFIG.delayedWarningRefreshSeconds)
 		return
 	end
 
@@ -189,8 +247,9 @@ function CW:ApplySavedAllocations(form, context)
 	end
 
 	form.cwRestoredFromContext = true
+	self:MarkWarningStateDirty(form)
 	self:QueueWarningRefresh(form, 0)
-	self:QueueWarningRefresh(form, 0.1)
+	self:QueueWarningRefresh(form, RUNTIME_CONFIG.delayedWarningRefreshSeconds)
 end
 
 function CW:SuppressAutoOpen()
@@ -200,7 +259,7 @@ end
 function CW:ManualRestoreLastContext()
 	local context = self.db.lastOrderContext
 	if not context or not IsContextFresh(context) then
-		self:Print("No saved recipe to restore.")
+		self:Print(TEXT.lastRecipe.noSavedRecipe)
 		return
 	end
 	self.suppressAutoOpen = false
@@ -269,15 +328,17 @@ function CW:BuildLastRecipeButton(browsePage)
 	local favBtn = searchBar and searchBar.FavoritesSearchButton
 	if not favBtn then return end
 	local btn = CreateFrame("Button", nil, searchBar, "SquareIconButtonTemplate")
-	btn:SetSize(32, 32)
-	btn:SetPoint("RIGHT", favBtn, "LEFT", -4, 0)
+	local buttonSize = UI_CONFIG.lastRecipeButtonSize
+	local buttonOffsetX = UI_CONFIG.lastRecipeButtonOffsetX
+	btn:SetSize(buttonSize, buttonSize)
+	btn:SetPoint("RIGHT", favBtn, "LEFT", buttonOffsetX, 0)
 	if btn.Icon then btn.Icon:SetAtlas("common-dropdown-icon-back") end
 	btn:SetScript("OnClick", function()
 		CW:ManualRestoreLastContext()
 	end)
 	btn:SetScript("OnEnter", function(b)
 		GameTooltip:SetOwner(b, "ANCHOR_RIGHT")
-		GameTooltip_AddHighlightLine(GameTooltip, "Last Recipe")
+		GameTooltip_AddHighlightLine(GameTooltip, TEXT.lastRecipe.label)
 		local ctx = CW.db.lastOrderContext
 		if ctx and ctx.spellID then
 			local name = C_Spell and C_Spell.GetSpellName and C_Spell.GetSpellName(ctx.spellID)
@@ -310,8 +371,16 @@ function CW:StartFormTicker(form)
 			self:StopFormTicker(form)
 			return
 		end
-		self:CaptureCurrentOrderContext(form)
-		self:QueueWarningRefresh(form, 0)
+
+		if self:ShouldCaptureContext(form) then
+			self:CaptureCurrentOrderContext(form)
+			form.cwLastContextCaptureTime = GetTime and GetTime() or time()
+		end
+
+		if self:ShouldRunFallbackRefresh(form) then
+			self:MarkWarningStateDirty(form)
+			self:QueueWarningRefresh(form, 0)
+		end
 	end)
 end
 
@@ -344,7 +413,7 @@ function CW:HookCustomerOrdersFrame()
 		end
 
 		self.restoreRequested = false
-		C_Timer.After(0.15, function()
+		C_Timer.After(RUNTIME_CONFIG.restoreTryDelaySeconds, function()
 			if not IsResting() then
 				return
 			end
@@ -357,6 +426,8 @@ function CW:HookCustomerOrdersFrame()
 			self:RenderWarnings(form, nil)
 			return
 		end
+		self:MarkWarningStateDirty(form)
+		self:QueueWarningRefresh(form, 0)
 		self:StartFormTicker(form)
 	end)
 
@@ -364,7 +435,20 @@ function CW:HookCustomerOrdersFrame()
 		self:CaptureCurrentOrderContext(form)
 		self:StopFormTicker(form)
 		self:InvalidateWarningCache()
+		form.cwWarningDirty = false
+		form.cwLastWarningRefreshTime = nil
+		form.cwLastContextCaptureTime = nil
+		form.cwRefreshToken = nil
 		self:RenderWarnings(form, nil)
+	end)
+
+	hooksecurefunc(frame.Form, "UpdateReagentSlots", function(form)
+		if not self:IsOperationalContext(form) then
+			return
+		end
+
+		self:MarkWarningStateDirty(form)
+		self:QueueWarningRefresh(form, 0)
 	end)
 
 	hooksecurefunc(frame.Form, "Init", function(form, order)
@@ -376,6 +460,7 @@ function CW:HookCustomerOrdersFrame()
 		end
 
 		self:CaptureCurrentOrderContext(form)
+		self:MarkWarningStateDirty(form)
 
 		if self.pendingRestoreContext
 			and order
@@ -384,7 +469,7 @@ function CW:HookCustomerOrdersFrame()
 		then
 			local context = self.pendingRestoreContext
 			self.pendingRestoreContext = nil
-			C_Timer.After(0.05, function()
+			C_Timer.After(RUNTIME_CONFIG.restoreApplyDelaySeconds, function()
 				if not self:IsOperationalContext(form) then
 					return
 				end
@@ -392,8 +477,9 @@ function CW:HookCustomerOrdersFrame()
 			end)
 		else
 			form.cwRestoredFromContext = false
+			self:MarkWarningStateDirty(form)
 			self:QueueWarningRefresh(form, 0)
-			self:QueueWarningRefresh(form, 0.1)
+			self:QueueWarningRefresh(form, RUNTIME_CONFIG.delayedWarningRefreshSeconds)
 		end
 	end)
 
@@ -409,6 +495,16 @@ function CW:HookCustomerOrdersFrame()
 	hooksecurefunc(frame.Form, "ListOrder", function()
 		if self.db.forgetOnPlace then
 			self:SuppressAutoOpen()
+		end
+
+		self:InvalidateWarningCache()
+		if self.ClearItemAnalysisCache then
+			self:ClearItemAnalysisCache()
+		end
+
+		if frame.Form then
+			frame.Form.cwWarningDirty = false
+			self:RenderWarnings(frame.Form, nil)
 		end
 	end)
 
@@ -429,7 +525,7 @@ function CW:Initialize()
 	self:EnsureDatabase()
 	self:TryHookProfessionUI()
 	local version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version") or "?"
-	self:Print(string.format("%s loaded. Use /craftwarn or /cw for options.", version))
+	self:Print(string.format(TEXT.loadedMessage, version))
 end
 
 ---------------------------------------------------------------------------
@@ -515,7 +611,8 @@ local function OnEvent(_, event, arg1)
 		CW:InvalidateWarningCache()
 		local form = CW:GetVisibleOrderForm()
 		if form then
-			CW:RefreshFormWarnings(form)
+			CW:MarkWarningStateDirty(form)
+			CW:QueueWarningRefresh(form, 0)
 		end
 
 	elseif event == "PLAYER_UPDATE_RESTING" then
