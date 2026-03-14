@@ -9,12 +9,17 @@ local CW = CraftWarn
 
 CW.db = CW.db or {}
 CW.pendingRestoreContext = nil
+CW.pendingRestoreIsManual = false
 CW.suppressAutoOpen = false
 CW.restoreRequested = false
+CW.restoreRequestToken = 0
 CW.customerFrameHooked = false
+CW.recipeSelectedHooked = false
+CW.recipeSelectionOrigin = nil
 CW.fallbackTickerSeconds = CW.RUNTIME_CONFIG and CW.RUNTIME_CONFIG.fallbackTickerSeconds
 CW.fallbackStaleRefreshSeconds = CW.RUNTIME_CONFIG and CW.RUNTIME_CONFIG.fallbackStaleRefreshSeconds
 CW.fallbackContextCaptureSeconds = CW.RUNTIME_CONFIG and CW.RUNTIME_CONFIG.fallbackContextCaptureSeconds
+CW.restoreRequestTimeoutSeconds = CW.RUNTIME_CONFIG and CW.RUNTIME_CONFIG.restoreRequestTimeoutSeconds
 
 -- Refs from Utilities
 local IsContextFresh				= CW.IsContextFresh
@@ -30,6 +35,10 @@ local TEXT							= CW.TEXT
 -- Core helpers
 ---------------------------------------------------------------------------
 
+local function NowSeconds()
+	return (GetTime and GetTime()) or time()
+end
+
 function CW:Print(msg)
 	local prefix = TEXT.addonPrefix
 	if DEFAULT_CHAT_FRAME then
@@ -40,6 +49,60 @@ end
 function CW:EnsureDatabase()
 	CraftWarnDB = CopyDefaults(CraftWarnDB, DEFAULTS)
 	self.db = CraftWarnDB
+end
+
+function CW:ClearRestoreRequest()
+	self.restoreRequested = false
+	self.pendingRestoreContext = nil
+	self.pendingRestoreIsManual = false
+	self.restoreRequestToken = (self.restoreRequestToken or 0) + 1
+end
+
+function CW:IsAutoOpenSuppressed()
+	return self.suppressAutoOpen and true or false
+end
+
+function CW:ClearAutoOpenSuppression()
+	if not self.suppressAutoOpen then
+		return
+	end
+
+	self.suppressAutoOpen = false
+end
+
+function CW:CanAttemptRestore(isManual)
+	if not IsResting() then
+		return false, nil
+	end
+
+	if not isManual then
+		if not self.db.autoOpenLastRecipe then
+			return false, nil
+		end
+
+		if self:IsAutoOpenSuppressed() then
+			return false, nil
+		end
+	end
+
+	if self.restoreRequested then
+		return false, nil
+	end
+
+	local context = self.db.lastOrderContext
+	if not context or not IsContextFresh(context) then
+		return false, nil
+	end
+
+	if not context.spellID or not context.skillLineAbilityID then
+		return false, nil
+	end
+
+	if not EventRegistry then
+		return false, nil
+	end
+
+	return true, context
 end
 
 function CW:IsOperationalContext(form)
@@ -185,7 +248,6 @@ function CW:CaptureCurrentOrderContext(form)
 		timestamp = time(),
 		allocations = allocations,
 	}
-	self.suppressAutoOpen = false
 	self:UpdateLastRecipeButton()
 end
 
@@ -262,45 +324,37 @@ function CW:ManualRestoreLastContext()
 		self:Print(TEXT.lastRecipe.noSavedRecipe)
 		return
 	end
-	self.suppressAutoOpen = false
-	self.restoreRequested = false
-	self:TryRestoreLastContext()
+	self:ClearAutoOpenSuppression()
+	self:ClearRestoreRequest()
+	self:TryRestoreLastContext(true)
 end
 
-function CW:TryRestoreLastContext()
-	if not IsResting() then
+function CW:TryRestoreLastContext(isManual)
+	local canRestore, context = self:CanAttemptRestore(isManual and true or false)
+	if not canRestore then
 		return
 	end
-
-	if not self.db.autoOpenLastRecipe then
-		return
-	end
-
-	if self.suppressAutoOpen then
-		return
-	end
-
-	if self.restoreRequested then
-		return
-	end
-
-	local context = self.db.lastOrderContext
-	if not context or not IsContextFresh(context) then
-		return
-	end
-
-	if not context.spellID or not context.skillLineAbilityID then
-		return
-	end
-
-	if not EventRegistry then
+	if not context then
 		return
 	end
 
 	self.pendingRestoreContext = context
+	self.pendingRestoreIsManual = isManual and true or false
 	self.restoreRequested = true
+	self.restoreRequestToken = (self.restoreRequestToken or 0) + 1
+	local token = self.restoreRequestToken
+	local timeoutSeconds = tonumber(self.restoreRequestTimeoutSeconds) or 0
+	if timeoutSeconds > 0 then
+		C_Timer.After(timeoutSeconds, function()
+			if self.restoreRequestToken ~= token then
+				return
+			end
+			self:ClearRestoreRequest()
+		end)
+	end
 
 	local unusableBOP = false
+	self.recipeSelectionOrigin = isManual and "manualRestore" or "autoRestore"
 	EventRegistry:TriggerEvent(
 		"ProfessionsCustomerOrders.RecipeSelected",
 		context.itemID,
@@ -308,6 +362,7 @@ function CW:TryRestoreLastContext()
 		context.skillLineAbilityID,
 		unusableBOP
 	)
+	self.recipeSelectionOrigin = nil
 end
 
 ---------------------------------------------------------------------------
@@ -406,18 +461,30 @@ function CW:HookCustomerOrdersFrame()
 	end
 
 	self.customerFrameHooked = true
+	if EventRegistry and not self.recipeSelectedHooked then
+		self.recipeSelectedHooked = true
+		hooksecurefunc(EventRegistry, "TriggerEvent", function(_, eventName)
+			if eventName ~= "ProfessionsCustomerOrders.RecipeSelected" then
+				return
+			end
+
+			if self.recipeSelectionOrigin == nil then
+				self:ClearAutoOpenSuppression()
+			end
+		end)
+	end
 
 	frame:HookScript("OnShow", function()
 		if not IsResting() then
 			return
 		end
 
-		self.restoreRequested = false
+		self:ClearRestoreRequest()
 		C_Timer.After(RUNTIME_CONFIG.restoreTryDelaySeconds, function()
-			if not IsResting() then
+			if not frame or not frame:IsShown() then
 				return
 			end
-			self:TryRestoreLastContext()
+			self:TryRestoreLastContext(false)
 		end)
 	end)
 
@@ -462,20 +529,31 @@ function CW:HookCustomerOrdersFrame()
 		self:CaptureCurrentOrderContext(form)
 		self:MarkWarningStateDirty(form)
 
+		local didScheduleRestore = false
 		if self.pendingRestoreContext
 			and order
 			and order.spellID
 			and self.pendingRestoreContext.spellID == order.spellID
 		then
 			local context = self.pendingRestoreContext
-			self.pendingRestoreContext = nil
+			local wasManualRestore = self.pendingRestoreIsManual
+			self:ClearRestoreRequest()
+			if wasManualRestore then
+				self:ClearAutoOpenSuppression()
+			end
+			didScheduleRestore = true
 			C_Timer.After(RUNTIME_CONFIG.restoreApplyDelaySeconds, function()
 				if not self:IsOperationalContext(form) then
 					return
 				end
 				self:ApplySavedAllocations(form, context)
 			end)
-		else
+		elseif self.restoreRequested then
+			-- A different recipe won the race; clear stale pending restore state.
+			self:ClearRestoreRequest()
+		end
+
+		if not didScheduleRestore then
 			form.cwRestoredFromContext = false
 			self:MarkWarningStateDirty(form)
 			self:QueueWarningRefresh(form, 0)

@@ -10,6 +10,7 @@ CW.RUNTIME_CONFIG = {
 	delayedWarningRefreshSeconds = 0.1,
 	restoreTryDelaySeconds = 0.15,
 	restoreApplyDelaySeconds = 0.05,
+	restoreRequestTimeoutSeconds = 1.0,
 }
 
 CW.UI_CONFIG = {
