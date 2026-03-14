@@ -1,0 +1,12 @@
+package-as: CraftWarn
+
+ignore:
+    - .github/*
+    - .git/*
+    - .gitignore
+    - .gitattributes
+    - .vscode/*
+    - .pkgmeta
+    - README.md
+    - icon.png
+        tag: latest
