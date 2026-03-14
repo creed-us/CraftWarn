@@ -17,7 +17,7 @@ function CW:BuildWarningFrames(form)
     local holder = CreateFrame("Frame", nil, parent)
     holder:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, -10)
     holder:SetWidth(350)
-    holder:SetHeight(24)
+    holder:SetHeight(48)
 
     local mismatch = holder:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     mismatch:SetPoint("TOPLEFT", holder, "TOPLEFT", 0, 0)
@@ -26,8 +26,14 @@ function CW:BuildWarningFrames(form)
     mismatch:SetTextColor(1.0, 0.23, 0.19)
 
     local reagent = holder:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    reagent:SetPoint("TOPLEFT", mismatch, "BOTTOMLEFT", 0, -2)
-    reagent:SetPoint("TOPRIGHT", mismatch, "BOTTOMRIGHT", 0, -2)
+    local armor = holder:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    armor:SetPoint("TOPLEFT", mismatch, "BOTTOMLEFT", 0, -2)
+    armor:SetPoint("TOPRIGHT", mismatch, "BOTTOMRIGHT", 0, -2)
+    armor:SetJustifyH("RIGHT")
+    armor:SetTextColor(1.0, 0.23, 0.19)
+
+    reagent:SetPoint("TOPLEFT", armor, "BOTTOMLEFT", 0, -2)
+    reagent:SetPoint("TOPRIGHT", armor, "BOTTOMRIGHT", 0, -2)
     reagent:SetJustifyH("RIGHT")
     reagent:SetTextColor(1.0, 0.82, 0.0)
 
@@ -39,6 +45,7 @@ function CW:BuildWarningFrames(form)
     form.CraftWarnWarnings = {
         holder = holder,
         mismatch = mismatch,
+        armor = armor,
         reagent = reagent,
         info = info,
     }
@@ -53,11 +60,16 @@ function CW:RenderWarnings(form, payload)
     end
 
     local mismatchText = payload and payload.mismatchText or nil
+    local armorText    = payload and payload.armorText or nil
     local reagentText  = payload and payload.reagentText or nil
     local infoText     = payload and payload.infoText or nil
+    local infoIsPositive = payload and payload.infoIsPositive or false
 
     warnings.mismatch:SetText(mismatchText or "")
     warnings.mismatch:SetShown(mismatchText and mismatchText ~= "")
+
+    warnings.armor:SetText(armorText or "")
+    warnings.armor:SetShown(armorText and armorText ~= "")
 
     warnings.reagent:SetText(reagentText or "")
     warnings.reagent:SetShown(reagentText and reagentText ~= "")
@@ -65,15 +77,13 @@ function CW:RenderWarnings(form, payload)
     warnings.info:SetText(infoText or "")
     warnings.info:SetShown(infoText and infoText ~= "")
 
-    -- Green tint for match confirmation, default gray for other info
-    local isMatch = infoText and infoText:find("^Stat Match") and true or false
-    if isMatch then
+    if infoIsPositive then
         warnings.info:SetTextColor(0.26, 0.84, 0.26)
     else
         warnings.info:SetTextColor(0.5, 0.5, 0.5)
     end
 
-    local visible = warnings.mismatch:IsShown() or warnings.reagent:IsShown() or warnings.info:IsShown()
+    local visible = warnings.mismatch:IsShown() or warnings.armor:IsShown() or warnings.reagent:IsShown() or warnings.info:IsShown()
     warnings.holder:SetShown(visible)
 end
 
@@ -86,10 +96,14 @@ end
 local warningCache = {
     spellID = nil,
     enableSpecStatWarning = nil,
+    enableArmorTypeWarning = nil,
     enableSpecStatMatch = nil,
+    enableArmorTypeMatch = nil,
     enableNoPrimaryStatInfo = nil,
     mismatchText = nil,
+    armorText = nil,
     infoText = nil,
+    infoIsPositive = false,
     reagentText = nil,
     reagentDirty = true,
 }
@@ -99,6 +113,9 @@ function CW:InvalidateWarningCache()
     warningCache.enableSpecStatWarning = nil
     warningCache.enableSpecStatMatch = nil
     warningCache.enableNoPrimaryStatInfo = nil
+    warningCache.enableArmorTypeWarning = nil
+    warningCache.enableArmorTypeMatch = nil
+    warningCache.infoIsPositive = false
     warningCache.reagentDirty = true
 end
 
@@ -182,6 +199,65 @@ function CW:BuildSpecMismatchWarning(form)
     return string.format("Stat Mismatch: Current spec uses %s, crafted item has %s.", expectedLabel, itemLabelText), nil
 end
 
+function CW:BuildArmorTypeWarning(form)
+    if not self.db.enableArmorTypeWarning then
+        return nil, nil
+    end
+
+    local expectedArmorType = CW.GetExpectedArmorTypeForPlayerClass()
+    if not expectedArmorType then
+        return nil, nil
+    end
+
+    local itemLink = self:GetCurrentOutputItemLink(form)
+    if not itemLink then
+        return nil, nil
+    end
+
+    if not C_Item.IsEquippableItem(itemLink) then
+        return nil, nil
+    end
+
+    local itemArmorType = CW.GetItemArmorType(itemLink)
+    if not itemArmorType then
+        return nil, nil
+    end
+
+    if itemArmorType == expectedArmorType then
+        if self.db.enableArmorTypeMatch then
+            return nil, string.format("Armor Match: Crafted item is %s.", itemArmorType)
+        end
+        return nil, nil
+    end
+
+    return string.format("Armor Mismatch: Class bonus armor is %s, crafted item is %s.", expectedArmorType, itemArmorType), nil
+end
+
+local function BuildInfoTextAndColor(statInfoText, armorInfoText)
+    local messages = {}
+    local allPositive = true
+
+    if statInfoText and statInfoText ~= "" then
+        table.insert(messages, statInfoText)
+        if not statInfoText:find("^Stat Match") then
+            allPositive = false
+        end
+    end
+
+    if armorInfoText and armorInfoText ~= "" then
+        table.insert(messages, armorInfoText)
+        if not armorInfoText:find("^Armor Match") then
+            allPositive = false
+        end
+    end
+
+    if #messages == 0 then
+        return nil, false
+    end
+
+    return table.concat(messages, "  "), allPositive
+end
+
 function CW:BuildReagentShortageWarning(form)
     if not form or not form.transaction or not form.cwRestoredFromContext then
         return nil
@@ -225,18 +301,30 @@ function CW:RefreshFormWarnings(form)
     local warnEnabled = self.db.enableSpecStatWarning
     local matchEnabled = self.db.enableSpecStatMatch
     local noStatEnabled = self.db.enableNoPrimaryStatInfo
+    local armorWarnEnabled = self.db.enableArmorTypeWarning
+    local armorMatchEnabled = self.db.enableArmorTypeMatch
 
     -- Only recompute if the recipe or settings changed since last time
     if spellID ~= warningCache.spellID
         or warnEnabled ~= warningCache.enableSpecStatWarning
         or matchEnabled ~= warningCache.enableSpecStatMatch
         or noStatEnabled ~= warningCache.enableNoPrimaryStatInfo
+        or armorWarnEnabled ~= warningCache.enableArmorTypeWarning
+        or armorMatchEnabled ~= warningCache.enableArmorTypeMatch
     then
         warningCache.spellID = spellID
         warningCache.enableSpecStatWarning = warnEnabled
         warningCache.enableSpecStatMatch = matchEnabled
         warningCache.enableNoPrimaryStatInfo = noStatEnabled
-        warningCache.mismatchText, warningCache.infoText = self:BuildSpecMismatchWarning(form)
+        warningCache.enableArmorTypeWarning = armorWarnEnabled
+        warningCache.enableArmorTypeMatch = armorMatchEnabled
+
+        local statMismatchText, statInfoText = self:BuildSpecMismatchWarning(form)
+        local armorMismatchText, armorInfoText = self:BuildArmorTypeWarning(form)
+
+        warningCache.mismatchText = statMismatchText
+        warningCache.armorText = armorMismatchText
+        warningCache.infoText, warningCache.infoIsPositive = BuildInfoTextAndColor(statInfoText, armorInfoText)
         warningCache.reagentDirty = true -- new recipe, so recheck reagents too
     end
 
@@ -248,7 +336,9 @@ function CW:RefreshFormWarnings(form)
 
     self:RenderWarnings(form, {
         mismatchText = warningCache.mismatchText,
+        armorText = warningCache.armorText,
         reagentText = warningCache.reagentText,
         infoText = warningCache.infoText,
+        infoIsPositive = warningCache.infoIsPositive,
     })
 end
