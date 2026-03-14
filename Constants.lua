@@ -37,3 +37,22 @@ CW.TRACKED_STAT_KEYS = {
 	"ITEM_MOD_AGILITY_SHORT",
 	"ITEM_MOD_INTELLECT_SHORT",
 }
+
+CW.ARMOR_TYPE_BY_CLASS_TOKEN = {
+	WARRIOR		= "Plate",
+	PALADIN		= "Plate",
+	DEATHKNIGHT	= "Plate",
+
+	HUNTER		= "Mail",
+	SHAMAN		= "Mail",
+	EVOKER		= "Mail",
+
+	ROGUE		= "Leather",
+	MONK		= "Leather",
+	DRUID		= "Leather",
+	DEMONHUNTER	= "Leather",
+
+	PRIEST		= "Cloth",
+	MAGE		= "Cloth",
+	WARLOCK		= "Cloth",
+}
