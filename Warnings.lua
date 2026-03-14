@@ -217,6 +217,11 @@ function CW:RefreshFormWarnings(form)
         return
     end
 
+    if self.IsOperationalContext and not self:IsOperationalContext(form) then
+        self:RenderWarnings(form, nil)
+        return
+    end
+
     local spellID = form.order and form.order.spellID
     local itemLink = self:GetCurrentOutputItemLink(form)
     local warnEnabled = self.db.enableSpecStatWarning

@@ -12,6 +12,7 @@ CW.pendingRestoreContext = nil
 CW.suppressAutoOpen = false
 CW.restoreRequested = false
 CW.customerFrameHooked = false
+CW.fallbackTickerSeconds = 0.75
 
 -- Refs from Utilities
 local IsContextFresh				= CW.IsContextFresh
@@ -36,11 +37,68 @@ function CW:EnsureDatabase()
 	self.db = CraftWarnDB
 end
 
+function CW:IsOperationalContext(form)
+	if not IsResting() then
+		return false
+	end
+
+	local targetForm = form
+	if not targetForm then
+		local frame = _G["ProfessionsCustomerOrdersFrame"]
+		targetForm = frame and frame.Form or nil
+	end
+
+	if not targetForm or not targetForm:IsShown() then
+		return false
+	end
+
+	local order = targetForm.order
+	if not order then
+		return false
+	end
+
+	return order.orderID == nil
+end
+
+function CW:QueueWarningRefresh(form, delaySeconds)
+	if not form then
+		return
+	end
+
+	if not self:IsOperationalContext(form) then
+		self:RenderWarnings(form, nil)
+		return
+	end
+
+	local delay = tonumber(delaySeconds) or 0
+	form.cwRefreshToken = (form.cwRefreshToken or 0) + 1
+	local token = form.cwRefreshToken
+
+	if delay <= 0 then
+		self:RefreshFormWarnings(form)
+		return
+	end
+
+	C_Timer.After(delay, function()
+		if not form or not form:IsShown() then
+			return
+		end
+		if form.cwRefreshToken ~= token then
+			return
+		end
+		self:RefreshFormWarnings(form)
+	end)
+end
+
 ---------------------------------------------------------------------------
 -- Order context capture / restore
 ---------------------------------------------------------------------------
 
 function CW:CaptureCurrentOrderContext(form)
+	if not self:IsOperationalContext(form) then
+		return
+	end
+
 	if not form or not form.transaction or not form.order then
 		return
 	end
@@ -84,23 +142,15 @@ function CW:ApplySavedAllocations(form, context)
 	local savedAllocations = context.allocations
 	if type(savedAllocations) ~= "table" or #savedAllocations == 0 then
 		form.cwRestoredFromContext = true
-		self:RefreshFormWarnings(form)
-		C_Timer.After(0.1, function()
-			if form and form:IsShown() then
-				self:RefreshFormWarnings(form)
-			end
-		end)
+		self:QueueWarningRefresh(form, 0)
+		self:QueueWarningRefresh(form, 0.1)
 		return
 	end
 
 	if not form.transaction.OverwriteAllocation then
 		form.cwRestoredFromContext = true
-		self:RefreshFormWarnings(form)
-		C_Timer.After(0.1, function()
-			if form and form:IsShown() then
-				self:RefreshFormWarnings(form)
-			end
-		end)
+		self:QueueWarningRefresh(form, 0)
+		self:QueueWarningRefresh(form, 0.1)
 		return
 	end
 
@@ -108,12 +158,8 @@ function CW:ApplySavedAllocations(form, context)
 	local slotSchematics = recipeSchematic and recipeSchematic.reagentSlotSchematics
 	if type(slotSchematics) ~= "table" then
 		form.cwRestoredFromContext = true
-		self:RefreshFormWarnings(form)
-		C_Timer.After(0.1, function()
-			if form and form:IsShown() then
-				self:RefreshFormWarnings(form)
-			end
-		end)
+		self:QueueWarningRefresh(form, 0)
+		self:QueueWarningRefresh(form, 0.1)
 		return
 	end
 
@@ -143,12 +189,8 @@ function CW:ApplySavedAllocations(form, context)
 	end
 
 	form.cwRestoredFromContext = true
-	self:RefreshFormWarnings(form)
-	C_Timer.After(0.1, function()
-		if form and form:IsShown() then
-			self:RefreshFormWarnings(form)
-		end
-	end)
+	self:QueueWarningRefresh(form, 0)
+	self:QueueWarningRefresh(form, 0.1)
 end
 
 function CW:SuppressAutoOpen()
@@ -167,6 +209,10 @@ function CW:ManualRestoreLastContext()
 end
 
 function CW:TryRestoreLastContext()
+	if not IsResting() then
+		return
+	end
+
 	if not self.db.autoOpenLastRecipe then
 		return
 	end
@@ -253,13 +299,19 @@ end
 function CW:StartFormTicker(form)
 	if not form then return end
 	self:StopFormTicker(form)
-	form.CraftWarnTicker = C_Timer.NewTicker(0.25, function()
+	form.CraftWarnTicker = C_Timer.NewTicker(self.fallbackTickerSeconds, function()
+		if not self:IsOperationalContext(form) then
+			self:RenderWarnings(form, nil)
+			self:StopFormTicker(form)
+			return
+		end
+
 		if not form:IsShown() then
 			self:StopFormTicker(form)
 			return
 		end
 		self:CaptureCurrentOrderContext(form)
-		self:RefreshFormWarnings(form)
+		self:QueueWarningRefresh(form, 0)
 	end)
 end
 
@@ -287,13 +339,24 @@ function CW:HookCustomerOrdersFrame()
 	self.customerFrameHooked = true
 
 	frame:HookScript("OnShow", function()
+		if not IsResting() then
+			return
+		end
+
 		self.restoreRequested = false
 		C_Timer.After(0.15, function()
+			if not IsResting() then
+				return
+			end
 			self:TryRestoreLastContext()
 		end)
 	end)
 
 	frame.Form:HookScript("OnShow", function(form)
+		if not self:IsOperationalContext(form) then
+			self:RenderWarnings(form, nil)
+			return
+		end
 		self:StartFormTicker(form)
 	end)
 
@@ -306,6 +369,12 @@ function CW:HookCustomerOrdersFrame()
 
 	hooksecurefunc(frame.Form, "Init", function(form, order)
 		self:InvalidateWarningCache()
+
+		if not self:IsOperationalContext(form) then
+			self:RenderWarnings(form, nil)
+			return
+		end
+
 		self:CaptureCurrentOrderContext(form)
 
 		if self.pendingRestoreContext
@@ -316,16 +385,15 @@ function CW:HookCustomerOrdersFrame()
 			local context = self.pendingRestoreContext
 			self.pendingRestoreContext = nil
 			C_Timer.After(0.05, function()
+				if not self:IsOperationalContext(form) then
+					return
+				end
 				self:ApplySavedAllocations(form, context)
 			end)
 		else
 			form.cwRestoredFromContext = false
-			self:RefreshFormWarnings(form)
-			C_Timer.After(0.1, function()
-				if form and form:IsShown() then
-					self:RefreshFormWarnings(form)
-				end
-			end)
+			self:QueueWarningRefresh(form, 0)
+			self:QueueWarningRefresh(form, 0.1)
 		end
 	end)
 
