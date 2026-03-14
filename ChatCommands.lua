@@ -3,6 +3,9 @@ if not CW then
 	return
 end
 
+local TEXT = CW.TEXT
+local CHAT_TEXT = TEXT.chat
+
 local function ToBoolean(value)
 	local v = value and string.lower(value)
 	if v == "on" or v == "1" or v == "true" then
@@ -32,11 +35,11 @@ local TOGGLE_COMMANDS = {
 local function HandleToggle(entry, arg)
 	local value = ToBoolean(arg)
 	if value == nil then
-		CW:Print(string.format("Usage: /craftwarn %s on|off", entry.cmd))
+		CW:Print(string.format(CHAT_TEXT.toggleUsage, entry.cmd))
 		return
 	end
 	CraftWarnDB[entry.key] = value
-	CW:Print(string.format("%s = %s", entry.key, tostring(value)))
+	CW:Print(string.format(CHAT_TEXT.settingValue, entry.key, tostring(value)))
 
 	if entry.refresh then
 		local form = CW:GetVisibleOrderForm()
@@ -57,22 +60,22 @@ end
 
 local function PrintStatus()
 	for _, entry in pairs(TOGGLE_COMMANDS) do
-		CW:Print(string.format("%s = %s", entry.key, tostring(CraftWarnDB[entry.key])))
+		CW:Print(string.format(CHAT_TEXT.settingValue, entry.key, tostring(CraftWarnDB[entry.key])))
 	end
 
 	if CraftWarnDB.lastOrderContext and CraftWarnDB.lastOrderContext.spellID then
-		CW:Print(string.format("saved spellID = %d", CraftWarnDB.lastOrderContext.spellID))
+		CW:Print(string.format(CHAT_TEXT.savedSpellId, CraftWarnDB.lastOrderContext.spellID))
 	else
-		CW:Print("saved spellID = none")
+		CW:Print(CHAT_TEXT.savedSpellIdNone)
 	end
 end
 
 local function PrintHelp()
-	CW:Print("/craftwarn status")
+	CW:Print(CHAT_TEXT.status)
 	for cmd in pairs(TOGGLE_COMMANDS) do
-		CW:Print(string.format("/craftwarn %s on|off", cmd))
+		CW:Print(string.format(CHAT_TEXT.toggleHelp, cmd))
 	end
-	CW:Print("/craftwarn reset")
+	CW:Print(CHAT_TEXT.reset)
 end
 
 ---------------------------------------------------------------------------
@@ -98,7 +101,7 @@ SlashCmdList.CRAFTWARN = function(msg)
 	if command == "reset" then
 		CraftWarnDB.lastOrderContext = nil
 		CW.pendingRestoreContext = nil
-		CW:Print("Cleared saved last order context.")
+		CW:Print(CHAT_TEXT.clearedContext)
 		return
 	end
 

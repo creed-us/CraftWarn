@@ -7,16 +7,8 @@ end
 -- Table-driven options schema
 ---------------------------------------------------------------------------
 
-local OPTIONS_SCHEMA = {
-	{ key = "autoOpenLastRecipe",		text = "Auto-open last recipe when browsing orders",		tooltip = "Automatically re-open the last recipe when the customer orders window opens." },
-	{ key = "enableSpecStatWarning",	text = "Warn on spec primary-stat mismatch",				tooltip = "Shows a warning if the crafted item primary stat does not match your current specialization primary stat.", refresh = true },
-	{ key = "enableArmorTypeWarning",	text = "Warn on class armor-type mismatch",					tooltip = "Shows a warning if the crafted armor type does not match your class bonus armor type.", refresh = true },
-	{ key = "enableSpecStatMatch",		text = "Show confirmation when stat matches spec",			tooltip = "Shows a green confirmation message when the crafted item primary stat matches your current specialization.", refresh = true },
-	{ key = "enableArmorTypeMatch",		text = "Show confirmation when armor matches class",		tooltip = "Shows a green confirmation message when the crafted armor type matches your class bonus armor type.", refresh = true },
-	{ key = "enableNoPrimaryStatInfo",	text = "Show info when crafted item has no primary stat",	tooltip = "Lower-priority info for items like rings/neck when no primary stat exists.", refresh = true },
-	{ key = "forgetOnBack",				text = "Don't auto-open last recipe after clicking back",	tooltip = "After clicking Back on the order form, the last recipe will not be automatically re-opened next time." },
-	{ key = "forgetOnPlace",			text = "Don't auto-open last recipe after placing an order", tooltip = "After placing an order, the last recipe will not be automatically re-opened next time." },
-}
+local OPTIONS_SCHEMA = CW.OPTIONS_SCHEMA
+local TEXT = CW.TEXT
 
 local function CreateCheckbox(parent, schema, yOffset)
 	local checkbox = CreateFrame("CheckButton", nil, parent, "InterfaceOptionsCheckButtonTemplate")
@@ -47,15 +39,15 @@ function CW:CreateOptionsPanel()
 	end
 
 	local panel = CreateFrame("Frame")
-	panel.name = "CraftWarn"
+	panel.name = TEXT.optionsPanelName
 
 	local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -16)
-	title:SetText("CraftWarn")
+	title:SetText(TEXT.optionsPanelName)
 
 	local subtitle = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
 	subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
-	subtitle:SetText("Remember last customer-order recipe and show safety warnings.")
+	subtitle:SetText(TEXT.optionsSubtitle)
 
 	local checkboxes = {}
 	for i, schema in ipairs(OPTIONS_SCHEMA) do
