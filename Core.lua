@@ -336,7 +336,7 @@ function CW:Initialize()
 	self:EnsureDatabase()
 	self:TryHookProfessionUI()
 	local version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version") or "?"
-	self:Print(string.format("%s loaded. Use /craftwarn for options.", version))
+	self:Print(string.format("%s loaded. Use /craftwarn or /cw for options.", version))
 end
 
 ---------------------------------------------------------------------------
