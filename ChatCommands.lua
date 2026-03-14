@@ -19,13 +19,14 @@ end
 ---------------------------------------------------------------------------
 
 local TOGGLE_COMMANDS = {
-	restore     = { key = "restoreLastRecipe" },
 	autoopen    = { key = "autoOpenLastRecipe" },
+	specwarn    = { key = "enableSpecStatWarning",		refresh = true },
+	armorwarn   = { key = "enableArmorTypeWarning",		refresh = true },
+	specmatch   = { key = "enableSpecStatMatch",		refresh = true },
+	armormatch  = { key = "enableArmorTypeMatch",		refresh = true },
+	nostatinfo  = { key = "enableNoPrimaryStatInfo",	refresh = true },
 	forgetback  = { key = "forgetOnBack" },
 	forgetplace = { key = "forgetOnPlace" },
-	specwarn    = { key = "enableSpecStatWarning",    refresh = true },
-	specmatch   = { key = "enableSpecStatMatch",      refresh = true },
-	nostatinfo  = { key = "enableNoPrimaryStatInfo",  refresh = true },
 }
 
 local function HandleToggle(entry, arg)
