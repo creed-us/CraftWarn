@@ -39,21 +39,21 @@ Open **Interface → AddOns → CraftWarn** to configure. All options can also b
 
 ## Commands
 
-`/craftwarn` or `/cw`
+`/craftwarn` or `/cwarn`
 
 | Command | Description |
 |---|---|
-| `/cw help` | Show all available commands |
-| `/cw status` | Print current settings and saved recipe info |
-| `/cw reset` | Clear the saved recipe context |
-| `/cw autoopen on\|off` | Toggle auto-open on window show |
-| `/cw specwarn on\|off` | Toggle the stat mismatch warning |
-| `/cw armorwarn on\|off` | Toggle the armor-type mismatch warning |
-| `/cw specmatch on\|off` | Toggle the stat match confirmation |
-| `/cw armormatch on\|off` | Toggle the armor-type match confirmation |
-| `/cw nostatinfo on\|off` | Toggle the no-primary-stat info |
-| `/cw forgetback on\|off` | Toggle forget-on-Back |
-| `/cw forgetplace on\|off` | Toggle forget-on-place-order |
+| `/cwarn help` | Show all available commands |
+| `/cwarn status` | Print current settings and saved recipe info |
+| `/cwarn reset` | Clear the saved recipe context |
+| `/cwarn autoopen on\|off` | Toggle auto-open on window show |
+| `/cwarn specwarn on\|off` | Toggle the stat mismatch warning |
+| `/cwarn armorwarn on\|off` | Toggle the armor-type mismatch warning |
+| `/cwarn specmatch on\|off` | Toggle the stat match confirmation |
+| `/cwarn armormatch on\|off` | Toggle the armor-type match confirmation |
+| `/cwarn nostatinfo on\|off` | Toggle the no-primary-stat info |
+| `/cwarn forgetback on\|off` | Toggle forget-on-Back |
+| `/cwarn forgetplace on\|off` | Toggle forget-on-place-order |
 
 ---
 

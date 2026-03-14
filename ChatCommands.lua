@@ -83,7 +83,7 @@ end
 ---------------------------------------------------------------------------
 
 SLASH_CRAFTWARN1 = "/craftwarn"
-SLASH_CRAFTWARN2 = "/cw"
+SLASH_CRAFTWARN2 = "/cwarn"
 SlashCmdList.CRAFTWARN = function(msg)
 	local command, arg = msg:match("^(%S+)%s*(.-)$")
 	command = command and string.lower(command) or ""
