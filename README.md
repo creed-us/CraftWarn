@@ -12,7 +12,7 @@ An addon for patrons looking to create crafting orders. It remembers the last re
 
 **Stat match confirmation** — Optionally shows a green confirmation when the item's primary stat *does* match your spec.
 
-**No primary stat info** — Optionally shows a grey note when the item has no primary stat at all (i.e., jwelry).
+**No primary stat info** — Optionally shows a grey note when the item has no primary stat at all (i.e., jewelry).
 
 ---
 
