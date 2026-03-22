@@ -5,6 +5,7 @@ end
 
 local TEXT = CW.TEXT
 local CHAT_TEXT = TEXT.chat
+local SLASH_TOGGLE_COMMANDS = CW.SLASH_TOGGLE_COMMANDS
 
 local function ToBoolean(value)
 	local v = value and string.lower(value)
@@ -21,16 +22,10 @@ end
 -- Table-driven toggle commands
 ---------------------------------------------------------------------------
 
-local TOGGLE_COMMANDS = {
-	autoopen    = { key = "autoOpenLastRecipe" },
-	specwarn    = { key = "enableSpecStatWarning",		refresh = true },
-	armorwarn   = { key = "enableArmorTypeWarning",		refresh = true },
-	specmatch   = { key = "enableSpecStatMatch",		refresh = true },
-	armormatch  = { key = "enableArmorTypeMatch",		refresh = true },
-	nostatinfo  = { key = "enableNoPrimaryStatInfo",	refresh = true },
-	forgetback  = { key = "forgetOnBack" },
-	forgetplace = { key = "forgetOnPlace" },
-}
+local TOGGLE_COMMANDS = {}
+for cmd, key in pairs(SLASH_TOGGLE_COMMANDS) do
+	TOGGLE_COMMANDS[cmd] = { key = key, cmd = cmd }
+end
 
 local function HandleToggle(entry, arg)
 	local value = ToBoolean(arg)
@@ -38,20 +33,8 @@ local function HandleToggle(entry, arg)
 		CW:Print(string.format(CHAT_TEXT.toggleUsage, entry.cmd))
 		return
 	end
-	CraftWarnDB[entry.key] = value
+	CW:SetSettingValue(entry.key, value)
 	CW:Print(string.format(CHAT_TEXT.settingValue, entry.key, tostring(value)))
-
-	if entry.refresh then
-		local form = CW:GetVisibleOrderForm()
-		if form then
-			CW:RefreshFormWarnings(form)
-		end
-	end
-end
-
--- Inject command name into each entry for usage messages
-for cmd, entry in pairs(TOGGLE_COMMANDS) do
-	entry.cmd = cmd
 end
 
 ---------------------------------------------------------------------------

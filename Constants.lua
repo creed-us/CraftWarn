@@ -42,10 +42,21 @@ CW.OPTIONS_SCHEMA = {
 	{ key = "enableSpecStatWarning", text = "Warn on spec primary-stat mismatch", tooltip = "Shows a warning if the crafted item primary stat does not match your current specialization primary stat.", refresh = true },
 	{ key = "enableArmorTypeWarning", text = "Warn on class armor-type mismatch", tooltip = "Shows a warning if the crafted armor type does not match your class bonus armor type.", refresh = true },
 	{ key = "enableSpecStatMatch", text = "Show confirmation when stat matches spec", tooltip = "Shows a green confirmation message when the crafted item primary stat matches your current specialization.", refresh = true },
-	{ key = "enableArmorTypeMatch", text = "Show confirmation when armor matches class", tooltip = "Shows a green confirmation message when the crafted armor type matches your class bonus armor type.", refresh = true },
+	{ key = "enableArmorTypeMatch", text = "Show confirmation when armor matches class (and informational warning when crafting cloaks)", tooltip = "Shows a green confirmation message when the crafted armor type matches your class bonus armor type.", refresh = true },
 	{ key = "enableNoPrimaryStatInfo", text = "Show info when crafted item has no primary stat", tooltip = "Lower-priority info for items like rings/neck when no primary stat exists.", refresh = true },
 	{ key = "forgetOnBack", text = "Don't auto-open last recipe after clicking back", tooltip = "After clicking Back on the order form, the last recipe will not be automatically re-opened next time." },
 	{ key = "forgetOnPlace", text = "Don't auto-open last recipe after placing an order", tooltip = "After placing an order, the last recipe will not be automatically re-opened next time." },
+}
+
+CW.SLASH_TOGGLE_COMMANDS = {
+	autoopen = "autoOpenLastRecipe",
+	specwarn = "enableSpecStatWarning",
+	armorwarn = "enableArmorTypeWarning",
+	specmatch = "enableSpecStatMatch",
+	armormatch = "enableArmorTypeMatch",
+	nostatinfo = "enableNoPrimaryStatInfo",
+	forgetback = "forgetOnBack",
+	forgetplace = "forgetOnPlace",
 }
 
 CW.TEXT = {
@@ -74,6 +85,7 @@ CW.TEXT = {
 		prefixArmorMismatch = "Armor Mismatch",
 		unknown = "Unknown",
 		noPrimaryStat = "Crafted item has no primary stat.",
+		itemIsCloak = "Crafted item is a cloak.",
 		statMatch = "Stat Match: Crafted item has %s.",
 		statMismatch = "Stat Mismatch: Current spec uses %s, crafted item has %s.",
 		armorMatch = "Armor Match: Crafted item is %s.",
