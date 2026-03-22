@@ -4,11 +4,67 @@ if not CW then
 end
 
 ---------------------------------------------------------------------------
--- Table-driven options schema
+-- Options schema
 ---------------------------------------------------------------------------
 
 local OPTIONS_SCHEMA = CW.OPTIONS_SCHEMA
 local TEXT = CW.TEXT
+
+local schemaByKey = nil
+
+local function BuildSchemaByKey()
+	schemaByKey = {}
+	for _, schema in ipairs(OPTIONS_SCHEMA) do
+		schemaByKey[schema.key] = schema
+	end
+end
+
+function CW:GetOptionSchemaByKey(key)
+	if type(key) ~= "string" then
+		return nil
+	end
+
+	if not schemaByKey then
+		BuildSchemaByKey()
+	end
+
+	local map = schemaByKey
+	if not map then
+		return nil
+	end
+
+	return map[key]
+end
+
+function CW:IsRefreshSettingKey(key)
+	local schema = self:GetOptionSchemaByKey(key)
+	return schema and schema.refresh and true or false
+end
+
+function CW:RefreshVisibleWarningsNow()
+	local form = self:GetVisibleOrderForm()
+	if not form then
+		return
+	end
+
+	self:MarkWarningStateDirty(form)
+	self:QueueWarningRefresh(form, 0)
+end
+
+function CW:SetSettingValue(key, value)
+	if type(key) ~= "string" then
+		return false
+	end
+
+	CraftWarnDB = CraftWarnDB or {}
+	CraftWarnDB[key] = value and true or false
+
+	if self:IsRefreshSettingKey(key) then
+		self:RefreshVisibleWarningsNow()
+	end
+
+	return true
+end
 
 local function CreateCheckbox(parent, schema, yOffset)
 	local checkbox = CreateFrame("CheckButton", nil, parent, "InterfaceOptionsCheckButtonTemplate")
@@ -17,13 +73,7 @@ local function CreateCheckbox(parent, schema, yOffset)
 	checkbox.tooltipText = schema.tooltip
 
 	checkbox:SetScript("OnClick", function(button)
-		CraftWarnDB[schema.key] = button:GetChecked() and true or false
-		if schema.refresh then
-			local form = CW:GetVisibleOrderForm()
-			if form then
-				CW:RefreshFormWarnings(form)
-			end
-		end
+		CW:SetSettingValue(schema.key, button:GetChecked())
 	end)
 
 	return checkbox
