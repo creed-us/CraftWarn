@@ -1,4 +1,3 @@
-
 local CW = CraftWarn
 
 local DEFAULTS = CW.DEFAULTS
@@ -28,75 +27,6 @@ local function CopyDefaults(db, defaults)
 	end
 
 	return db
-end
-
-local function BuildReagentIdentity(reagent)
-	if not reagent then
-		return nil
-	end
-
-	if reagent.itemID then
-		return string.format("item:%d", reagent.itemID)
-	end
-
-	if reagent.currencyID then
-		return string.format("currency:%d", reagent.currencyID)
-	end
-
-	return nil
-end
-
-local function NormalizeCraftingReagentInfo(info)
-	if not info or not info.reagent then
-		return nil
-	end
-
-	local reagent = info.reagent
-	if not reagent.itemID and not reagent.currencyID then
-		return nil
-	end
-
-	return {
-		slotIndex = info.slotIndex,
-		dataSlotIndex = info.dataSlotIndex,
-		quantity = info.quantity or 0,
-		itemID = reagent.itemID,
-		currencyID = reagent.currencyID,
-		key = BuildReagentIdentity(reagent),
-	}
-end
-
-local function NormalizeCraftingReagentInfos(infos)
-	local normalized = {}
-
-	if type(infos) ~= "table" then
-		return normalized
-	end
-
-	for _, info in ipairs(infos) do
-		local entry = NormalizeCraftingReagentInfo(info)
-		if entry and entry.slotIndex and entry.quantity and entry.quantity > 0 then
-			table.insert(normalized, entry)
-		end
-	end
-
-	return normalized
-end
-
-local function BuildReagentFromSaved(saved)
-	if not saved then
-		return nil
-	end
-
-	if saved.itemID then
-		return { itemID = saved.itemID }
-	end
-
-	if saved.currencyID then
-		return { currencyID = saved.currencyID }
-	end
-
-	return nil
 end
 
 local function IsContextFresh(context)
@@ -214,8 +144,6 @@ end
 ---------------------------------------------------------------------------
 
 CW.CopyDefaults              = CopyDefaults
-CW.NormalizeCraftingReagentInfos = NormalizeCraftingReagentInfos
-CW.BuildReagentFromSaved       = BuildReagentFromSaved
 CW.IsContextFresh              = IsContextFresh
 CW.CurrentSpecInfo             = CurrentSpecInfo
 CW.DetectPrimaryStatsOnItem    = DetectPrimaryStatsOnItem
