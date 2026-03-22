@@ -10,6 +10,8 @@
 Constants.lua
 Utilities.lua
 Warnings.lua
+OrderContext.lua
+CustomerOrdersHooks.lua
 Core.lua
 Options.lua
 ChatCommands.lua
