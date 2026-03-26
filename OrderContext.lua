@@ -121,16 +121,50 @@ function CW:TryRestoreLastContext(isManual)
 	end
 
 	self.recipeSelectionOrigin = isManual and "manualRestore" or "autoRestore"
+
 	---@diagnostic disable: need-check-nil
-	EventRegistry:TriggerEvent(
-		"ProfessionsCustomerOrders.RecipeSelected",
-		context.itemID,
-		context.spellID,
-		context.skillLineAbilityID,
-		unusableBOP
-	)
+	if context.isRecraft then
+		EventRegistry:TriggerEvent("ProfessionsCustomerOrders.RecraftCategorySelected")
+		self:TrySelectRecraftItem(context.recraftGUID, context.recraftItemHyperlink)
+	else
+		EventRegistry:TriggerEvent("ProfessionsCustomerOrders.RecipeSelected",
+			context.itemID, context.spellID, context.skillLineAbilityID, false)
+	end
 	---@diagnostic enable: need-check-nil
+
 	self.recipeSelectionOrigin = nil
+end
+
+--- Select recraft item by GUID (preferred) or by searching bags for hyperlink match.
+function CW:TrySelectRecraftItem(recraftGUID, recraftItemHyperlink)
+	if not recraftGUID and not recraftItemHyperlink then return end
+
+	C_Timer.After(RUNTIME_CONFIG.restoreRecraftDelaySeconds, function()
+		local itemGUID = recraftGUID
+
+		-- If GUID invalid or missing, try to find item in bags by hyperlink
+		if itemGUID then
+			local loc = C_Item and C_Item.GetItemLocation and C_Item.GetItemLocation(itemGUID)
+			if not loc or not loc:IsValid() then itemGUID = nil end
+		end
+
+		if not itemGUID and recraftItemHyperlink then
+			local bagLoc = FindItemInBagsByLink(recraftItemHyperlink)
+			if bagLoc then
+				local loc = CreateItemLocation(bagLoc.bagID, bagLoc.slotIndex)
+				if loc and loc:IsValid() and C_Item and C_Item.GetItemGUID then
+					itemGUID = C_Item.GetItemGUID(loc)
+				end
+			end
+		end
+
+		if not itemGUID then return end
+
+		local frame = _G["ProfessionsCustomerOrdersFrame"]
+		if frame and frame.Form and frame.Form:IsShown() and frame.Form.SetRecraftItemGUID then
+			frame.Form:SetRecraftItemGUID(itemGUID)
+		end
+	end)
 end
 
 ---------------------------------------------------------------------------

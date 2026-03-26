@@ -10,6 +10,7 @@ CW.RUNTIME_CONFIG = {
 	delayedWarningRefreshSeconds = 0.1,
 	restoreTryDelaySeconds = 0.15,
 	restoreApplyDelaySeconds = 0.05,
+	restoreRecraftDelaySeconds = 0.2,
 	restoreRequestTimeoutSeconds = 1.0,
 }
 
@@ -66,7 +67,9 @@ CW.TEXT = {
 	loadedMessage = "%s loaded. Use /craftwarn or /cwarn for options.",
 	lastRecipe = {
 		label = "Last Recipe",
+		labelRecraft = "Last Recipe (Recraft)",
 		noSavedRecipe = "No saved recipe to restore.",
+		recraftItemNotFound = "Recraft item not found in bags.",
 	},
 	chat = {
 		toggleUsage = "Usage: /craftwarn %s on|off",

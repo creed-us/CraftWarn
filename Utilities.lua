@@ -128,6 +128,86 @@ local function GetItemArmorType(itemLink)
 end
 
 ---------------------------------------------------------------------------
+-- Bag / Item helpers
+---------------------------------------------------------------------------
+
+--- Extract itemID from an item hyperlink.
+--- @param itemLink string|nil The item hyperlink.
+--- @return number|nil The extracted itemID.
+local function GetItemIDFromLink(itemLink)
+	if not itemLink then
+		return nil
+	end
+
+	-- Item links format: |cff...|Hitem:itemID:...|h[Name]|h|r
+	local itemIDStr = itemLink:match("|Hitem:(%d+):")
+	if itemIDStr then
+		return tonumber(itemIDStr)
+	end
+
+	return nil
+end
+
+--- Find an item in player bags that matches the given item link.
+--- Returns the ItemLocation if found, nil otherwise.
+--- For recraft, we match by itemID and prefer exact hyperlink match when possible.
+--- @param targetItemLink string The item hyperlink to match.
+--- @return table|nil ItemLocation table with bagID and slotIndex, or nil if not found.
+local function FindItemInBagsByLink(targetItemLink)
+	if not targetItemLink then
+		return nil
+	end
+
+	local targetItemID = GetItemIDFromLink(targetItemLink)
+	if not targetItemID then
+		return nil
+	end
+
+	-- Check C_Container API availability
+	if not C_Container or not C_Container.GetContainerNumSlots then
+		return nil
+	end
+
+	local fallbackMatch = nil
+
+	-- Iterate through bags (0 = backpack, 1-4 = regular bags)
+	for bagID = 0, 4 do
+		local numSlots = C_Container.GetContainerNumSlots(bagID)
+		for slotIndex = 1, numSlots do
+			local itemInfo = C_Container.GetContainerItemInfo(bagID, slotIndex)
+			if itemInfo and itemInfo.itemID == targetItemID then
+				-- Found an item with matching itemID
+				local itemLink = C_Container.GetContainerItemLink(bagID, slotIndex)
+				if itemLink then
+					-- Prefer exact hyperlink match (same item with same bonuses/stats)
+					if itemLink == targetItemLink then
+						return { bagID = bagID, slotIndex = slotIndex }
+					end
+					-- Keep first itemID match as fallback
+					if not fallbackMatch then
+						fallbackMatch = { bagID = bagID, slotIndex = slotIndex }
+					end
+				end
+			end
+		end
+	end
+
+	-- Return fallback match (same itemID but potentially different bonuses) if no exact match
+	return fallbackMatch
+end
+
+--- Create an ItemLocation from bag and slot.
+--- @param bagID number The bag ID.
+--- @param slotIndex number The slot index.
+--- @return table|nil ItemLocation object or nil if invalid.
+local function CreateItemLocation(bagID, slotIndex)
+	if ItemLocation and ItemLocation.CreateFromBagAndSlot then
+		return ItemLocation:CreateFromBagAndSlot(bagID, slotIndex)
+	end
+	return nil
+end
+
+---------------------------------------------------------------------------
 -- Shared accessor
 ---------------------------------------------------------------------------
 
@@ -149,3 +229,6 @@ CW.CurrentSpecInfo             = CurrentSpecInfo
 CW.DetectPrimaryStatsOnItem    = DetectPrimaryStatsOnItem
 CW.GetExpectedArmorTypeForPlayerClass = GetExpectedArmorTypeForPlayerClass
 CW.GetItemArmorType            = GetItemArmorType
+CW.GetItemIDFromLink           = GetItemIDFromLink
+CW.FindItemInBagsByLink        = FindItemInBagsByLink
+CW.CreateItemLocation          = CreateItemLocation
