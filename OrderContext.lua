@@ -60,6 +60,9 @@ function CW:CaptureCurrentOrderContext(form)
 	local spellID, skillLineAbilityID = form.order.spellID, form.order.skillLineAbilityID
 	if not spellID or not skillLineAbilityID then return end
 
+	-- Don't capture incomplete recraft order forms
+	if form.order.isRecraft and not form.recraftGUID then return end
+
 	local outputItemID = form.order.itemID
 	if not outputItemID and C_TradeSkillUI and C_TradeSkillUI.GetRecipeSchematic then
 		local schematic = C_TradeSkillUI.GetRecipeSchematic(spellID, form.order.isRecraft or false)

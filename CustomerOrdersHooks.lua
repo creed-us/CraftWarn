@@ -83,7 +83,10 @@ function CW:HookCustomerOrdersFrame()
 			return
 		end
 
-		self:CaptureCurrentOrderContext(form)
+		-- Don't re-capture context if restore is requested
+		if not self.restoreRequested then
+			self:CaptureCurrentOrderContext(form)
+		end
 		self:MarkWarningStateDirty(form)
 
 		local didScheduleRestore = false
