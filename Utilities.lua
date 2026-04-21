@@ -43,7 +43,7 @@ local function IsContextFresh(context)
 end
 
 local function CurrentSpecInfo()
-	local specIndex = C_SpecializationInfo and C_SpecializationInfo.GetSpecialization and C_SpecializationInfo.GetSpecialization()
+	local specIndex = C_SpecializationInfo.GetSpecialization()
 	if not specIndex and GetSpecialization then
 		specIndex = GetSpecialization()
 	end
@@ -52,12 +52,7 @@ local function CurrentSpecInfo()
 		return nil
 	end
 
-	local specID, name, _, _, _, primaryStat
-	if C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo then
-		specID, name, _, _, _, primaryStat = C_SpecializationInfo.GetSpecializationInfo(specIndex)
-	elseif GetSpecializationInfo then
-		specID, name, _, _, _, primaryStat = GetSpecializationInfo(specIndex)
-	end
+	local specID, name, _, _, _, primaryStat = C_SpecializationInfo.GetSpecializationInfo(specIndex)
 
 	if not primaryStat then
 		return nil
@@ -72,7 +67,7 @@ local function CurrentSpecInfo()
 end
 
 local function DetectPrimaryStatsOnItem(itemLink)
-	local stats = C_Item and C_Item.GetItemStats and C_Item.GetItemStats(itemLink)
+	local stats = C_Item.GetItemStats(itemLink)
 	if not stats and GetItemStats then
 		stats = GetItemStats(itemLink)
 	end
@@ -112,14 +107,9 @@ local function GetItemArmorType(itemLink)
 		return nil
 	end
 
-	local classID, subClassID
-	if C_Item and C_Item.GetItemInfoInstant then
-		_, _, _, _, _, classID, subClassID = C_Item.GetItemInfoInstant(itemLink)
-	else
-		return nil
-	end
+	local _, _, _, _, _, classID, subClassID = C_Item.GetItemInfoInstant(itemLink)
 
-	local armorClassID = Enum and Enum.ItemClass and Enum.ItemClass.Armor or 4
+	local armorClassID = Enum.ItemClass.Armor or 4
 	if classID ~= armorClassID then
 		return nil
 	end
@@ -164,7 +154,7 @@ local function FindItemInBagsByLink(targetItemLink)
 	end
 
 	-- Check C_Container API availability
-	if not C_Container or not C_Container.GetContainerNumSlots then
+	if not C_Container.GetContainerNumSlots then
 		return nil
 	end
 
