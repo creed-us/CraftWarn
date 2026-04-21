@@ -1,4 +1,4 @@
-## Interface: 120001
+## Interface: 120005
 ## Title: CraftWarn
 ## Notes: An addon to remember your most previous item & warn you if an item doesn't have your spec's primary stat.
 ## Author: Mysticae-Proudmoore
