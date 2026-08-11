@@ -37,6 +37,7 @@ function CW:SuppressAutoOpen()
 end
 
 function CW:CanAttemptRestore(isManual)
+	if InCombatLockdown() then return false, nil end
 	if not IsResting() or not EventRegistry then return false, nil end
 	if not isManual and (not self.db.autoOpenLastRecipe or self.suppressAutoOpen) then return false, nil end
 	if self.restoreRequested then return false, nil end
@@ -127,10 +128,10 @@ function CW:TryRestoreLastContext(isManual)
 
 	---@diagnostic disable: need-check-nil
 	if context.isRecraft then
-		EventRegistry:TriggerEvent("ProfessionsCustomerOrders.RecraftCategorySelected")
+		securecall(EventRegistry.TriggerEvent, EventRegistry, "ProfessionsCustomerOrders.RecraftCategorySelected")
 		self:TrySelectRecraftItem(context.recraftGUID, context.recraftItemHyperlink)
 	else
-		EventRegistry:TriggerEvent("ProfessionsCustomerOrders.RecipeSelected",
+		securecall(EventRegistry.TriggerEvent, EventRegistry, "ProfessionsCustomerOrders.RecipeSelected",
 			context.itemID, context.spellID, context.skillLineAbilityID, false)
 	end
 	---@diagnostic enable: need-check-nil
@@ -164,8 +165,8 @@ function CW:TrySelectRecraftItem(recraftGUID, recraftItemHyperlink)
 		if not itemGUID then return end
 
 		local frame = _G["ProfessionsCustomerOrdersFrame"]
-		if frame and frame.Form and frame.Form:IsShown() and frame.Form.SetRecraftItemGUID then
-			frame.Form:SetRecraftItemGUID(itemGUID)
+		if frame and frame.Form and frame.Form:IsShown() then
+			securecall(frame.Form.SetRecraftItemGUID, frame.Form, itemGUID)
 		end
 	end)
 end
