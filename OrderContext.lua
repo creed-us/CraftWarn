@@ -64,13 +64,13 @@ function CW:CaptureCurrentOrderContext(form)
 	if form.order.isRecraft and not form.recraftGUID then return end
 
 	local outputItemID = form.order.itemID
-	if not outputItemID and C_TradeSkillUI and C_TradeSkillUI.GetRecipeSchematic then
+	if not outputItemID then
 		local schematic = C_TradeSkillUI.GetRecipeSchematic(spellID, form.order.isRecraft or false)
 		outputItemID = schematic and schematic.outputItemID
 	end
 
 	local recraftItemHyperlink = form.order.recraftItemHyperlink
-	if form.order.isRecraft and form.recraftGUID and not recraftItemHyperlink and C_Item and C_Item.GetItemLinkByGUID then
+	if form.order.isRecraft and form.recraftGUID and not recraftItemHyperlink then
 		recraftItemHyperlink = C_Item.GetItemLinkByGUID(form.recraftGUID)
 	end
 
@@ -147,7 +147,7 @@ function CW:TrySelectRecraftItem(recraftGUID, recraftItemHyperlink)
 
 		-- If GUID invalid or missing, try to find item in bags by hyperlink
 		if itemGUID then
-			local loc = C_Item and C_Item.GetItemLocation and C_Item.GetItemLocation(itemGUID)
+			local loc = C_Item.GetItemLocation(itemGUID)
 			if not loc or not loc:IsValid() then itemGUID = nil end
 		end
 
@@ -155,7 +155,7 @@ function CW:TrySelectRecraftItem(recraftGUID, recraftItemHyperlink)
 			local bagLoc = FindItemInBagsByLink(recraftItemHyperlink)
 			if bagLoc then
 				local loc = CreateItemLocation(bagLoc.bagID, bagLoc.slotIndex)
-				if loc and loc:IsValid() and C_Item and C_Item.GetItemGUID then
+				if loc and loc:IsValid() then
 					itemGUID = C_Item.GetItemGUID(loc)
 				end
 			end
@@ -203,9 +203,9 @@ function CW:BuildLastRecipeButton(browsePage)
 		GameTooltip_AddHighlightLine(GameTooltip, ctx and ctx.isRecraft and TEXT.lastRecipe.labelRecraft or TEXT.lastRecipe.label)
 		if ctx then
 			if ctx.isRecraft then
-				local link = ctx.recraftItemHyperlink or (ctx.recraftGUID and C_Item and C_Item.GetItemLinkByGUID and C_Item.GetItemLinkByGUID(ctx.recraftGUID))
+				local link = ctx.recraftItemHyperlink or (ctx.recraftGUID and C_Item.GetItemLinkByGUID(ctx.recraftGUID))
 				if link then GameTooltip_AddNormalLine(GameTooltip, link) end
-			elseif ctx.spellID and C_Spell and C_Spell.GetSpellName then
+			elseif ctx.spellID then
 				local name = C_Spell.GetSpellName(ctx.spellID)
 				if name then GameTooltip_AddNormalLine(GameTooltip, name) end
 			end

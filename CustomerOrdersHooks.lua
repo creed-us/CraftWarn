@@ -39,10 +39,11 @@ function CW:HookCustomerOrdersFrame()
 	if EventRegistry and not self.recipeSelectedHooked then
 		self.recipeSelectedHooked = true
 		hooksecurefunc(EventRegistry, "TriggerEvent", function(_, eventName)
-			if eventName == "ProfessionsCustomerOrders.RecipeSelected" and self.recipeSelectionOrigin == nil then
+			if eventName == "ProfessionsCustomerOrders.RecipeSelected", function()
+			if self.recipeSelectionOrigin == nil then
 				self:ClearAutoOpenSuppression()
 			end
-		end)
+		end, self)
 	end
 
 	frame:HookScript("OnShow", function()

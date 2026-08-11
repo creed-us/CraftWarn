@@ -242,9 +242,7 @@ end
 -- If both addons loaded before us (unlikely but possible), skip ADDON_LOADED entirely
 local function CleanupAlreadyLoadedAddons()
 	for addon in pairs(pendingAddons) do
-		if C_AddOns and C_AddOns.IsAddOnLoaded and C_AddOns.IsAddOnLoaded(addon) then
-			pendingAddons[addon] = nil
-		elseif IsAddOnLoaded and IsAddOnLoaded(addon) then
+		if C_AddOns.IsAddOnLoaded(addon) then
 			pendingAddons[addon] = nil
 		end
 	end

@@ -44,10 +44,6 @@ end
 
 local function CurrentSpecInfo()
 	local specIndex = C_SpecializationInfo.GetSpecialization()
-	if not specIndex and GetSpecialization then
-		specIndex = GetSpecialization()
-	end
-
 	if not specIndex then
 		return nil
 	end
@@ -68,10 +64,6 @@ end
 
 local function DetectPrimaryStatsOnItem(itemLink)
 	local stats = C_Item.GetItemStats(itemLink)
-	if not stats and GetItemStats then
-		stats = GetItemStats(itemLink)
-	end
-
 	if type(stats) ~= "table" then
 		return {}
 	end
