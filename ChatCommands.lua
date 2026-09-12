@@ -18,10 +18,6 @@ local function ToBoolean(value)
 	return nil
 end
 
----------------------------------------------------------------------------
--- Table-driven toggle commands
----------------------------------------------------------------------------
-
 local TOGGLE_COMMANDS = {}
 for cmd, key in pairs(SLASH_TOGGLE_COMMANDS) do
 	TOGGLE_COMMANDS[cmd] = { key = key, cmd = cmd }
@@ -36,10 +32,6 @@ local function HandleToggle(entry, arg)
 	CW:SetSettingValue(entry.key, value)
 	CW:Print(string.format(CHAT_TEXT.settingValue, entry.key, tostring(value)))
 end
-
----------------------------------------------------------------------------
--- Status / help
----------------------------------------------------------------------------
 
 local function PrintStatus()
 	for _, entry in pairs(TOGGLE_COMMANDS) do
@@ -60,10 +52,6 @@ local function PrintHelp()
 	end
 	CW:Print(CHAT_TEXT.reset)
 end
-
----------------------------------------------------------------------------
--- Slash handler
----------------------------------------------------------------------------
 
 SLASH_CRAFTWARN1 = "/craftwarn"
 SLASH_CRAFTWARN2 = "/cwarn"

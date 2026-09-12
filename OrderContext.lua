@@ -8,10 +8,6 @@ local RUNTIME_CONFIG = CW.RUNTIME_CONFIG
 local UI_CONFIG = CW.UI_CONFIG
 local TEXT = CW.TEXT
 
----------------------------------------------------------------------------
--- Order context capture / restore
----------------------------------------------------------------------------
-
 function CW:ClearCachedRecipeContext()
 	if self.db then self.db.lastOrderContext = nil end
 	if CraftWarnDB then CraftWarnDB.lastOrderContext = nil end
@@ -170,10 +166,6 @@ function CW:TrySelectRecraftItem(recraftGUID, recraftItemHyperlink)
 		end
 	end)
 end
-
----------------------------------------------------------------------------
--- Last-recipe button
----------------------------------------------------------------------------
 
 function CW:UpdateLastRecipeButton()
 	local btn = self.lastRecipeButton

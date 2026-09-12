@@ -3,10 +3,6 @@ if not CW then
 	return
 end
 
----------------------------------------------------------------------------
--- Options schema
----------------------------------------------------------------------------
-
 local OPTIONS_SCHEMA = CW.OPTIONS_SCHEMA
 local TEXT = CW.TEXT
 
@@ -78,10 +74,6 @@ local function CreateCheckbox(parent, schema, yOffset)
 
 	return checkbox
 end
-
----------------------------------------------------------------------------
--- Panel creation
----------------------------------------------------------------------------
 
 function CW:CreateOptionsPanel()
 	if self.optionsPanel then

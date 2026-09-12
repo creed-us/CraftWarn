@@ -152,7 +152,6 @@ local function FindItemInBagsByLink(targetItemLink)
 
 	local fallbackMatch = nil
 
-	-- Iterate through bags (0 = backpack, 1-4 = regular bags)
 	for bagID = 0, 4 do
 		local numSlots = C_Container.GetContainerNumSlots(bagID)
 		for slotIndex = 1, numSlots do
@@ -174,24 +173,15 @@ local function FindItemInBagsByLink(targetItemLink)
 		end
 	end
 
-	-- Return fallback match (same itemID but potentially different bonuses) if no exact match
 	return fallbackMatch
 end
 
---- Create an ItemLocation from bag and slot.
---- @param bagID number The bag ID.
---- @param slotIndex number The slot index.
---- @return table|nil ItemLocation object or nil if invalid.
 local function CreateItemLocation(bagID, slotIndex)
 	if ItemLocation and ItemLocation.CreateFromBagAndSlot then
 		return ItemLocation:CreateFromBagAndSlot(bagID, slotIndex)
 	end
 	return nil
 end
-
----------------------------------------------------------------------------
--- Shared accessor
----------------------------------------------------------------------------
 
 function CW:GetVisibleOrderForm()
 	local frame = _G["ProfessionsCustomerOrdersFrame"]
@@ -200,10 +190,6 @@ function CW:GetVisibleOrderForm()
 	end
 	return nil
 end
-
----------------------------------------------------------------------------
--- Exports
----------------------------------------------------------------------------
 
 CW.CopyDefaults              = CopyDefaults
 CW.IsContextFresh              = IsContextFresh

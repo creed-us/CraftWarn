@@ -20,10 +20,6 @@ local function ClearFormWarningState(form)
 	form.cwRefreshToken = nil
 end
 
----------------------------------------------------------------------------
--- UI hooking
----------------------------------------------------------------------------
-
 function CW:HookCustomerOrdersFrame()
 	if self.customerFrameHooked then
 		return

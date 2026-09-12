@@ -3,10 +3,6 @@ local ADDON_NAME = ...
 CraftWarn = CraftWarn or {}
 local CW = CraftWarn
 
----------------------------------------------------------------------------
--- State
----------------------------------------------------------------------------
-
 CW.db = CW.db or {}
 CW.pendingRestoreContext = nil
 CW.pendingRestoreIsManual = false
@@ -18,15 +14,10 @@ CW.recipeSelectedHooked = false
 CW.recipeSelectionOrigin = nil
 CW.isShuttingDown = false
 
--- Refs from Utilities
 local CopyDefaults		= CW.CopyDefaults
 local DEFAULTS			= CW.DEFAULTS
 local RUNTIME_CONFIG	= CW.RUNTIME_CONFIG
 local TEXT				= CW.TEXT
-
----------------------------------------------------------------------------
--- Core helpers
----------------------------------------------------------------------------
 
 function CW:Print(msg)
 	local prefix = TEXT.addonPrefix
@@ -143,10 +134,6 @@ function CW:QueueWarningRefresh(form, delaySeconds)
 	end)
 end
 
----------------------------------------------------------------------------
--- Ticker
----------------------------------------------------------------------------
-
 function CW:StartFormTicker(form)
 	if not form then return end
 	self:StopFormTicker(form)
@@ -181,10 +168,6 @@ function CW:StopFormTicker(form)
 	end
 end
 
----------------------------------------------------------------------------
--- Initialization
----------------------------------------------------------------------------
-
 function CW:Initialize()
 	self:EnsureDatabase()
 	self:HookCustomerOrdersFrame()
@@ -192,10 +175,7 @@ function CW:Initialize()
 	self:Print(string.format(TEXT.loadedMessage, version))
 end
 
----------------------------------------------------------------------------
--- Events (only active while resting in cities/inns)
----------------------------------------------------------------------------
-
+-- Events below are only active while resting in cities/inns.
 local eventFrame = CreateFrame("Frame")
 
 -- Blizzard loads these on demand, so watch ADDON_LOADED until they show up
@@ -217,7 +197,6 @@ local function UnregisterActiveEvents()
 	activeEventsRegistered = false
 	eventFrame:UnregisterEvent("PLAYER_SPECIALIZATION_CHANGED")
 
-	-- Kill the ticker, no point in running it outside of rest areas
 	local frame = _G["ProfessionsCustomerOrdersFrame"]
 	if frame and frame.Form then
 		CW:StopFormTicker(frame.Form)
@@ -247,7 +226,7 @@ local function CleanupAlreadyLoadedAddons()
 		end
 	end
 	if not next(pendingAddons) then
-		return true -- already loaded, don't bother with ADDON_LOADED
+		return true
 	end
 	return false
 end
