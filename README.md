@@ -16,7 +16,9 @@ An addon for patrons that remembers the last recipe you opened, and warns you wh
 
 **Armor-type match confirmation** — Optionally shows a green confirmation when the item's armor type *does* match your class.
 
-**No primary stat info** — Optionally shows a grey note when the item has no primary stat at all (i.e., jewelry).
+**No primary stat info** — Optionally shows a note when the item has no primary stat at all (i.e., jewelry). If an item has no passive stat but its tooltip still mentions one (trinkets that grant a primary stat through an on-use or conditional proc), it's flagged as a "Stat Proc".
+
+**Embellished gear tracker** — Scans your equipped gear and bags for Embellished items and shows how many you have equipped, and whether you're carrying any  in your bags.
 
 ---
 
@@ -30,8 +32,9 @@ Open **Interface → AddOns → CraftWarn** to configure. All options can also b
 | Warn on spec primary-stat mismatch | On | Red warning when the crafted item's stat doesn't match your spec |
 | Warn on class armor-type mismatch | On | Red warning when the crafted armor type doesn't match your class bonus armor |
 | Show confirmation when stat matches spec | Off | Green confirmation when the stat does match |
-| Show confirmation when armor matches class | Off | Green confirmation when the armor type does match |
+| Show confirmation when armor matches class | Off | Green confirmation when the armor type does match, plus an info note for universal-slot items (rings, necklaces, trinkets, cloaks, off-hand) |
 | Show when crafted item has no primary stat | Off | Grey note for items like rings and necks that lack a primary stat |
+| Show Embellished gear info | On | Equipped/bag Embellished item counts on the order form |
 | Don't reopen after clicking back | Off | Suppress auto-open after clicking Back on the order form |
 | Don't reopen after placing an order | Off | Suppress auto-open after placing an order |
 
@@ -52,6 +55,7 @@ Open **Interface → AddOns → CraftWarn** to configure. All options can also b
 | `/cwarn specmatch on\|off` | Toggle the stat match confirmation |
 | `/cwarn armormatch on\|off` | Toggle the armor-type match confirmation |
 | `/cwarn nostatinfo on\|off` | Toggle the no-primary-stat info |
+| `/cwarn embellishinfo on\|off` | Toggle the Embellished gear info |
 | `/cwarn forgetback on\|off` | Toggle forget-on-Back |
 | `/cwarn forgetplace on\|off` | Toggle forget-on-place-order |
 
