@@ -73,6 +73,7 @@ function CW:HookCustomerOrdersFrame()
 
 	hooksecurefunc(frame.Form, "Init", function(form, order)
 		self:InvalidateWarningCache()
+		self:InvalidateEmbellishmentCounts()
 
 		if not self:IsOperationalContext(form) then
 			self:RenderWarnings(form, nil)
