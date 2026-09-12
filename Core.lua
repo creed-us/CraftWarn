@@ -190,12 +190,16 @@ local function RegisterActiveEvents()
 	if activeEventsRegistered then return end
 	activeEventsRegistered = true
 	eventFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+	eventFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
+	eventFrame:RegisterEvent("BAG_UPDATE_DELAYED")
 end
 
 local function UnregisterActiveEvents()
 	if not activeEventsRegistered then return end
 	activeEventsRegistered = false
 	eventFrame:UnregisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+	eventFrame:UnregisterEvent("PLAYER_EQUIPMENT_CHANGED")
+	eventFrame:UnregisterEvent("BAG_UPDATE_DELAYED")
 
 	local frame = _G["ProfessionsCustomerOrdersFrame"]
 	if frame and frame.Form then
@@ -254,6 +258,13 @@ local function OnEvent(_, event, arg1)
 		local form = CW:GetVisibleOrderForm()
 		if form then
 			CW:MarkWarningStateDirty(form)
+			CW:QueueWarningRefresh(form, 0)
+		end
+
+	elseif event == "PLAYER_EQUIPMENT_CHANGED" or event == "BAG_UPDATE_DELAYED" then
+		CW:InvalidateEmbellishmentCounts()
+		local form = CW:GetVisibleOrderForm()
+		if form then
 			CW:QueueWarningRefresh(form, 0)
 		end
 
