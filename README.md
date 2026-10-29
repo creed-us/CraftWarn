@@ -37,6 +37,7 @@ Open **Interface → AddOns → CraftWarn** to configure. All options can also b
 | Show Embellished gear info | On | Equipped/bag Embellished item counts on the order form |
 | Don't reopen after clicking back | Off | Suppress auto-open after clicking Back on the order form |
 | Don't reopen after placing an order | Off | Suppress auto-open after placing an order |
+| Show startup message in chat | On | Print the "loaded" message to chat at login |
 
 ---
 
@@ -58,6 +59,7 @@ Open **Interface → AddOns → CraftWarn** to configure. All options can also b
 | `/cwarn embellishinfo on\|off` | Toggle the Embellished gear info |
 | `/cwarn forgetback on\|off` | Toggle forget-on-Back |
 | `/cwarn forgetplace on\|off` | Toggle forget-on-place-order |
+| `/cwarn loadmsg on\|off` | Toggle the startup chat message |
 
 ---
 

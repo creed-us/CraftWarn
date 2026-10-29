@@ -47,6 +47,7 @@ CW.OPTIONS_SCHEMA = {
 	{ key = "enableEmbellishmentInfo", text = "Show Embellished gear info (equipped + bags)", tooltip = "Shows how many Embellished items you have equipped (max 2) and whether you're carrying any in your bags.", refresh = true },
 	{ key = "forgetOnBack", text = "Don't auto-open last recipe after clicking back", tooltip = "After clicking Back on the order form, the last recipe will not be automatically re-opened next time." },
 	{ key = "forgetOnPlace", text = "Don't auto-open last recipe after placing an order", tooltip = "After placing an order, the last recipe will not be automatically re-opened next time." },
+	{ key = "showLoadedMessage", text = "Show startup message in chat", tooltip = "Prints a short message to chat when CraftWarn loads at login." },
 }
 
 CW.SLASH_TOGGLE_COMMANDS = {
@@ -59,6 +60,7 @@ CW.SLASH_TOGGLE_COMMANDS = {
 	embellishinfo = "enableEmbellishmentInfo",
 	forgetback = "forgetOnBack",
 	forgetplace = "forgetOnPlace",
+	loadmsg = "showLoadedMessage",
 }
 
 CW.TEXT = {
@@ -118,6 +120,7 @@ CW.DEFAULTS = {
 	enableEmbellishmentInfo	= true,
 	forgetOnBack			= false,
 	forgetOnPlace			= false,
+	showLoadedMessage		= true,
 	restoreTTLSeconds		= 24 * 60 * 60,
 	lastOrderContext		= nil,
 }

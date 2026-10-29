@@ -171,8 +171,10 @@ end
 function CW:Initialize()
 	self:EnsureDatabase()
 	self:HookCustomerOrdersFrame()
-	local version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version") or "?"
-	self:Print(string.format(TEXT.loadedMessage, version))
+	if self.db.showLoadedMessage then
+		local version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version") or "?"
+		self:Print(string.format(TEXT.loadedMessage, version))
+	end
 end
 
 -- Events below are only active while resting in cities/inns.
